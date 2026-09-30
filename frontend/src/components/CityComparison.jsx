@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import WeatherIcon from './WeatherIcon';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui/card';
@@ -17,6 +17,7 @@ export default function CityComparison({ currentCity, unit }) {
   const [error, setError] = useState(null);
 
   const handleCompare = async (cityQuery) => {
+    if (!cityQuery) return;
     setLoading(true);
     setError(null);
     try {
@@ -36,6 +37,9 @@ export default function CityComparison({ currentCity, unit }) {
         }
       });
       setTargetData(wRes.data.data);
+      try {
+        localStorage.setItem('mausam_compare_target_city', match.name);
+      } catch (e) {}
     } catch (err) {
       console.error(err);
       setError('Failed to fetch comparison');
@@ -43,6 +47,17 @@ export default function CityComparison({ currentCity, unit }) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('mausam_compare_target_city');
+      const target = saved || 'Mumbai';
+      setTargetCityName(target);
+      handleCompare(target);
+    } catch (e) {
+      handleCompare('Mumbai');
+    }
+  }, []);
 
   const c1 = currentCity?.current;
   const c2 = targetData?.current;

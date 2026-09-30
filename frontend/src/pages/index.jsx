@@ -32,6 +32,16 @@ import {
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
+const STORAGE_KEYS = {
+  ACTIVE_CITY: 'mausam_active_city',
+  SAVED_LOCATION: 'mausam_saved_location',
+  LOCATION_CONSENT: 'mausam_location_consent',
+  UNIT: 'mausam_unit',
+  ACTIVE_TAB: 'mausam_active_tab',
+  FAVORITES: 'mausam_favorite_cities',
+  CACHED_WEATHER_PREFIX: 'mausam_cached_weather_'
+};
+
 export default function WeatherDashboard() {
   const [selectedCity, setSelectedCity] = useState({
     name: 'New Delhi',
@@ -49,71 +59,120 @@ export default function WeatherDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [favorites, setFavorites] = useState([]);
   const [showLocationDialog, setShowLocationDialog] = useState(false);
+  const [isRestored, setIsRestored] = useState(false);
 
-  // Check initial location permission and saved preference
+  // Restore persisted session & telemetry data on mount
   useEffect(() => {
-    try {
-      const consent = localStorage.getItem('mausam_location_consent');
-      const savedLoc = localStorage.getItem('mausam_saved_location');
+    if (typeof window === 'undefined') return;
 
-      if (!consent) {
-        // First visit: automatically ask for permission with descriptive dialog
-        setShowLocationDialog(true);
-      } else if (consent === 'live_granted') {
-        if (savedLoc) {
-          try {
-            setSelectedCity(JSON.parse(savedLoc));
-          } catch (e) {}
-        }
-        // Auto-synchronize live location in background if previously allowed
-        if (typeof navigator !== 'undefined' && navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-              try {
-                const res = await axios.get(`${BACKEND_URL}/api/cities/reverse`, {
-                  params: { lat: pos.coords.latitude, lon: pos.coords.longitude },
-                  timeout: 4000
-                });
-                if (res.data?.data) {
-                  setSelectedCity(res.data.data);
-                  localStorage.setItem('mausam_saved_location', JSON.stringify(res.data.data));
-                }
-              } catch (e) {
-                console.warn('Background location sync warning:', e);
-              }
-            },
-            () => {},
-            { timeout: 8000, maximumAge: 120000 }
-          );
-        }
-      } else if (savedLoc) {
-        try {
-          setSelectedCity(JSON.parse(savedLoc));
-        } catch (e) {}
+    try {
+      // 1. Restore Unit ('C' or 'F')
+      const savedUnit = localStorage.getItem(STORAGE_KEYS.UNIT);
+      if (savedUnit === 'C' || savedUnit === 'F') {
+        setUnit(savedUnit);
       }
-    } catch (e) {
-      console.warn(e);
-    }
-  }, []);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('mausam_favorite_cities');
-      if (stored) {
-        setFavorites(JSON.parse(stored));
+      // 2. Restore Active Tab
+      const savedTab = localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB);
+      if (savedTab) {
+        setActiveTab(savedTab);
+      }
+
+      // 3. Restore Pinned Stations / Favorites
+      const savedFavs = localStorage.getItem(STORAGE_KEYS.FAVORITES);
+      if (savedFavs) {
+        try {
+          const parsedFavs = JSON.parse(savedFavs);
+          if (Array.isArray(parsedFavs) && parsedFavs.length > 0) {
+            setFavorites(parsedFavs);
+          }
+        } catch (e) {}
       } else {
-        setFavorites([
+        const defaultFavs = [
           { name: 'New Delhi', state: 'Delhi', lat: 28.6139, lon: 77.2090 },
           { name: 'Mumbai', state: 'Maharashtra', lat: 19.0760, lon: 72.8777 },
           { name: 'Bengaluru', state: 'Karnataka', lat: 12.9716, lon: 77.5946 },
-        ]);
+        ];
+        setFavorites(defaultFavs);
+        localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(defaultFavs));
+      }
+
+      // 4. Restore Currently Opened City & Hydrate Cached Weather
+      const consent = localStorage.getItem(STORAGE_KEYS.LOCATION_CONSENT);
+      const savedActiveCity = localStorage.getItem(STORAGE_KEYS.ACTIVE_CITY);
+      const savedLoc = localStorage.getItem(STORAGE_KEYS.SAVED_LOCATION);
+
+      let targetCity = null;
+
+      if (savedActiveCity) {
+        try {
+          const parsed = JSON.parse(savedActiveCity);
+          if (parsed?.name && parsed?.lat && parsed?.lon) {
+            targetCity = parsed;
+          }
+        } catch (e) {}
+      }
+
+      if (!targetCity && savedLoc) {
+        try {
+          const parsed = JSON.parse(savedLoc);
+          if (parsed?.name && parsed?.lat && parsed?.lon) {
+            targetCity = parsed;
+          }
+        } catch (e) {}
+      }
+
+      if (targetCity) {
+        setSelectedCity(targetCity);
+
+        // Immediate cache hydration to avoid blank loading screen on page refresh
+        const cachedRaw = localStorage.getItem(`${STORAGE_KEYS.CACHED_WEATHER_PREFIX}${targetCity.name}`);
+        if (cachedRaw) {
+          try {
+            const cached = JSON.parse(cachedRaw);
+            if (cached?.data) {
+              setWeatherData(cached.data);
+              setLoading(false);
+            }
+          } catch (e) {}
+        }
+      } else if (!consent) {
+        // First visit with no saved city: show descriptive location dialog
+        setShowLocationDialog(true);
+      }
+
+      // 5. If user consented to live location and hadn't picked an explicit custom city, sync in background
+      if (consent === 'live_granted' && !savedActiveCity && typeof navigator !== 'undefined' && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            try {
+              const res = await axios.get(`${BACKEND_URL}/api/cities/reverse`, {
+                params: { lat: pos.coords.latitude, lon: pos.coords.longitude },
+                timeout: 4000
+              });
+              if (res.data?.data) {
+                const liveCity = res.data.data;
+                setSelectedCity(liveCity);
+                localStorage.setItem(STORAGE_KEYS.SAVED_LOCATION, JSON.stringify(liveCity));
+                localStorage.setItem(STORAGE_KEYS.ACTIVE_CITY, JSON.stringify(liveCity));
+              }
+            } catch (e) {
+              console.warn('Background location sync warning:', e);
+            }
+          },
+          () => {},
+          { timeout: 8000, maximumAge: 120000 }
+        );
       }
     } catch (e) {
-      console.warn(e);
+      console.warn('State restoration warning:', e);
+    } finally {
+      setIsRestored(true);
     }
-  }, [selectedCity]);
+  }, []);
 
   const fetchWeather = useCallback(async (city) => {
+    if (!city || !city.lat || !city.lon) return;
     setLoading(true);
     setError(null);
     try {
@@ -127,6 +186,13 @@ export default function WeatherDashboard() {
       });
       if (res.data.success) {
         setWeatherData(res.data.data);
+        // Persist weather data cache for this city
+        try {
+          localStorage.setItem(
+            `${STORAGE_KEYS.CACHED_WEATHER_PREFIX}${city.name}`,
+            JSON.stringify({ data: res.data.data, timestamp: Date.now() })
+          );
+        } catch (e) {}
       } else {
         throw new Error(res.data.error || 'Failed to fetch weather');
       }
@@ -157,8 +223,9 @@ export default function WeatherDashboard() {
   }, []);
 
   useEffect(() => {
+    if (!isRestored) return;
     fetchWeather(selectedCity);
-  }, [selectedCity, fetchWeather]);
+  }, [selectedCity, isRestored, fetchWeather]);
 
   useEffect(() => {
     fetchOverview();
@@ -166,7 +233,31 @@ export default function WeatherDashboard() {
 
   const handleSelectCity = (city) => {
     setSelectedCity(city);
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_CITY, JSON.stringify(city));
+    } catch (e) {}
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleUnitChange = (newUnit) => {
+    setUnit(newUnit);
+    try {
+      localStorage.setItem(STORAGE_KEYS.UNIT, newUnit);
+    } catch (e) {}
+  };
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, newTab);
+    } catch (e) {}
+  };
+
+  const handleFavoritesChange = (newFavs) => {
+    setFavorites(newFavs);
+    try {
+      localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(newFavs));
+    } catch (e) {}
   };
 
   const handleRefresh = () => {
@@ -181,7 +272,7 @@ export default function WeatherDashboard() {
         selectedCity={selectedCity}
         onSelectCity={handleSelectCity}
         unit={unit}
-        onToggleUnit={setUnit}
+        onToggleUnit={handleUnitChange}
         onRefresh={handleRefresh}
         loading={loading}
         onOpenLocationDialog={() => setShowLocationDialog(true)}
@@ -192,14 +283,13 @@ export default function WeatherDashboard() {
         isOpen={showLocationDialog}
         onClose={() => setShowLocationDialog(false)}
         onLocationDetected={(loc) => {
-          setSelectedCity(loc);
           handleSelectCity(loc);
         }}
         onSelectManual={() => {
           // Dismiss dialog to allow manual searching
         }}
         onDefaultCapital={() => {
-          setSelectedCity({
+          handleSelectCity({
             name: 'New Delhi',
             state: 'Delhi',
             lat: 28.6139,
@@ -235,7 +325,7 @@ export default function WeatherDashboard() {
         )}
 
         {/* Navigation Tabs using shadcn Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="bg-secondary/70 border border-border/70 p-1 rounded-2xl flex flex-wrap gap-1 h-auto">
             <TabsTrigger value="overview" className="gap-1.5 rounded-xl text-xs py-2 px-3.5">
               <LayoutDashboard className="w-3.5 h-3.5" />
@@ -301,7 +391,7 @@ export default function WeatherDashboard() {
             <>
               {/* 1. Overview Dashboard */}
               <TabsContent value="overview" className="space-y-6 mt-6">
-                <WeatherHero weather={weatherData} unit={unit} />
+                <WeatherHero weather={weatherData} unit={unit} onFavoritesChange={handleFavoritesChange} />
 
                 {weatherData.alerts && weatherData.alerts.length > 0 && (
                   <WeatherAlerts alerts={weatherData.alerts} />

@@ -31,7 +31,7 @@ import {
   Gauge
 } from 'lucide-react';
 
-export default function WeatherHero({ weather, unit }) {
+export default function WeatherHero({ weather, unit, onFavoritesChange }) {
   const [copied, setCopied] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
@@ -71,6 +71,9 @@ export default function WeatherHero({ weather, unit }) {
         setIsFavorite(true);
       }
       localStorage.setItem('mausam_favorite_cities', JSON.stringify(favs));
+      if (onFavoritesChange) {
+        onFavoritesChange(favs);
+      }
     } catch (e) {
       console.warn(e);
     }

@@ -65,6 +65,34 @@ export default function RainRadarMap({ lat, lon, cityName }) {
   const [activePalette, setActivePalette] = useState(2);
   const [radarStatus, setRadarStatus] = useState('Online');
 
+  // Restore basemap and palette preference on mount
+  useEffect(() => {
+    try {
+      const savedBasemap = localStorage.getItem('mausam_radar_basemap');
+      if (savedBasemap && BASEMAP_TILES[savedBasemap]) {
+        setActiveBasemap(savedBasemap);
+      }
+      const savedPalette = localStorage.getItem('mausam_radar_palette');
+      if (savedPalette) {
+        setActivePalette(Number(savedPalette));
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleSelectBasemap = (bm) => {
+    setActiveBasemap(bm);
+    try {
+      localStorage.setItem('mausam_radar_basemap', bm);
+    } catch (e) {}
+  };
+
+  const handleSelectPalette = (pal) => {
+    setActivePalette(pal);
+    try {
+      localStorage.setItem('mausam_radar_palette', String(pal));
+    } catch (e) {}
+  };
+
   // Fetch Radar metadata
   useEffect(() => {
     let isMounted = true;
@@ -265,7 +293,7 @@ export default function RainRadarMap({ lat, lon, cityName }) {
           {/* Basemap Switcher */}
           <div className="flex rounded-xl bg-secondary/80 border border-border p-0.5 text-xs">
             <button
-              onClick={() => setActiveBasemap('dark')}
+              onClick={() => handleSelectBasemap('dark')}
               className={`px-2.5 py-1 rounded-lg font-semibold transition ${
                 activeBasemap === 'dark' ? 'bg-primary text-slate-950 font-bold' : 'text-muted-foreground hover:text-white'
               }`}
@@ -273,7 +301,7 @@ export default function RainRadarMap({ lat, lon, cityName }) {
               Dark
             </button>
             <button
-              onClick={() => setActiveBasemap('satellite')}
+              onClick={() => handleSelectBasemap('satellite')}
               className={`px-2.5 py-1 rounded-lg font-semibold transition ${
                 activeBasemap === 'satellite' ? 'bg-primary text-slate-950 font-bold' : 'text-muted-foreground hover:text-white'
               }`}
@@ -281,7 +309,7 @@ export default function RainRadarMap({ lat, lon, cityName }) {
               Satellite
             </button>
             <button
-              onClick={() => setActiveBasemap('osm')}
+              onClick={() => handleSelectBasemap('osm')}
               className={`px-2.5 py-1 rounded-lg font-semibold transition ${
                 activeBasemap === 'osm' ? 'bg-primary text-slate-950 font-bold' : 'text-muted-foreground hover:text-white'
               }`}
@@ -293,7 +321,7 @@ export default function RainRadarMap({ lat, lon, cityName }) {
           {/* Palette Selector */}
           <select
             value={activePalette}
-            onChange={(e) => setActivePalette(Number(e.target.value))}
+            onChange={(e) => handleSelectPalette(Number(e.target.value))}
             className="h-8 px-2.5 rounded-xl bg-secondary border border-border text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
           >
             {RADAR_PALETTES.map((p) => (
