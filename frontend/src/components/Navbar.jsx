@@ -34,7 +34,8 @@ export default function Navbar({
   unit,
   onToggleUnit,
   onRefresh,
-  loading
+  loading,
+  onOpenLocationDialog
 }) {
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -331,12 +332,12 @@ export default function Navbar({
           <Button
             variant="glass"
             size="sm"
-            onClick={handleDetectLocation}
-            title="Detect Current GPS Location"
+            onClick={onOpenLocationDialog || handleDetectLocation}
+            title="Set Live Telemetry / GPS Location"
             className="flex items-center gap-1.5 rounded-xl border-border/70"
           >
             <Compass className="w-4 h-4 text-emerald-400" />
-            <span className="hidden sm:inline">GPS</span>
+            <span className="hidden sm:inline">GPS Telemetry</span>
           </Button>
 
           {/* Unit Toggle Buttons */}

@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { City, State } from 'country-state-city';
 import Fuse from 'fuse.js';
 
@@ -151,4 +152,78 @@ export function fuzzyFindIndianCities(query, limit = 10) {
 
   formatted.sort((a, b) => b.rank - a.rank);
   return formatted.slice(0, limit);
+}
+
+/**
+ * Reverse geocode latitude and longitude to Indian city/town
+ */
+export async function reverseGeocodeIndianCity(lat, lon) {
+  const latitude = parseFloat(lat);
+  const longitude = parseFloat(lon);
+
+  // 1. Try Nominatim OpenStreetMap reverse geocode
+  try {
+    const res = await axios.get('https://nominatim.openstreetmap.org/reverse', {
+      params: {
+        lat: latitude,
+        lon: longitude,
+        format: 'json',
+        addressdetails: 1
+      },
+      headers: {
+        'User-Agent': 'MausamBharat/2.0 (National Weather Portal)'
+      },
+      timeout: 3500
+    });
+
+    const addr = res.data?.address || {};
+    const cityName = addr.city || addr.town || addr.municipality || addr.district || addr.suburb || addr.state_district || addr.county || 'Local Area';
+    const stateName = addr.state || '';
+
+    return {
+      name: cityName,
+      state: stateName,
+      region: 'India',
+      lat: latitude,
+      lon: longitude,
+      source: 'Nominatim'
+    };
+  } catch (err) {
+    console.warn('Nominatim reverse geocode fallback to local DB:', err.message);
+  }
+
+  // 2. Fallback: Find nearest city in country-state-city database
+  const { cities } = getSearchEngine();
+  let nearest = null;
+  let minDist = Infinity;
+
+  for (const c of cities) {
+    const dLat = c.lat - latitude;
+    const dLon = c.lon - longitude;
+    const dist = dLat * dLat + dLon * dLon;
+    if (dist < minDist) {
+      minDist = dist;
+      nearest = c;
+    }
+  }
+
+  if (nearest) {
+    return {
+      name: nearest.name,
+      state: nearest.state,
+      region: 'India',
+      lat: latitude,
+      lon: longitude,
+      source: 'Local-DB'
+    };
+  }
+
+  return {
+    name: 'Current Location',
+    state: 'India',
+    region: 'India',
+    lat: latitude,
+    lon: longitude,
+    source: 'GPS'
+  };
 }

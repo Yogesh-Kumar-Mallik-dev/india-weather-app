@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { fetchFullWeather, searchCities, getIndiaStatesOverview } from '../services/weatherService.js';
 import { getRainViewerRadar } from '../services/rainViewerService.js';
+import { reverseGeocodeIndianCity } from '../services/citySearchService.js';
 import { INDIAN_MAJOR_CITIES } from '../data/indianCities.js';
 
 const router = Router();
@@ -30,6 +31,22 @@ router.get('/cities/search', async (req, res) => {
   } catch (err) {
     console.error('City search error:', err);
     res.status(500).json({ success: false, error: 'Failed to search cities' });
+  }
+});
+
+// Reverse Geocode coordinates to Indian city/town
+router.get('/cities/reverse', async (req, res) => {
+  try {
+    const lat = req.query.lat;
+    const lon = req.query.lon;
+    if (!lat || !lon) {
+      return res.status(400).json({ success: false, error: 'lat and lon parameters are required' });
+    }
+    const data = await reverseGeocodeIndianCity(lat, lon);
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('Reverse geocoding error:', err);
+    res.status(500).json({ success: false, error: 'Failed to reverse geocode location' });
   }
 });
 

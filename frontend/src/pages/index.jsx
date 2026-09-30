@@ -12,6 +12,7 @@ import DailyForecast from '../components/DailyForecast';
 import RainRadarMap from '../components/RainRadarMap';
 import IndiaOverviewGrid from '../components/IndiaOverviewGrid';
 import CityComparison from '../components/CityComparison';
+import LocationPermissionDialog from '../components/LocationPermissionDialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -47,6 +48,53 @@ export default function WeatherDashboard() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [favorites, setFavorites] = useState([]);
+  const [showLocationDialog, setShowLocationDialog] = useState(false);
+
+  // Check initial location permission and saved preference
+  useEffect(() => {
+    try {
+      const consent = localStorage.getItem('mausam_location_consent');
+      const savedLoc = localStorage.getItem('mausam_saved_location');
+
+      if (!consent) {
+        // First visit: automatically ask for permission with descriptive dialog
+        setShowLocationDialog(true);
+      } else if (consent === 'live_granted') {
+        if (savedLoc) {
+          try {
+            setSelectedCity(JSON.parse(savedLoc));
+          } catch (e) {}
+        }
+        // Auto-synchronize live location in background if previously allowed
+        if (typeof navigator !== 'undefined' && navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              try {
+                const res = await axios.get(`${BACKEND_URL}/api/cities/reverse`, {
+                  params: { lat: pos.coords.latitude, lon: pos.coords.longitude },
+                  timeout: 4000
+                });
+                if (res.data?.data) {
+                  setSelectedCity(res.data.data);
+                  localStorage.setItem('mausam_saved_location', JSON.stringify(res.data.data));
+                }
+              } catch (e) {
+                console.warn('Background location sync warning:', e);
+              }
+            },
+            () => {},
+            { timeout: 8000, maximumAge: 120000 }
+          );
+        }
+      } else if (savedLoc) {
+        try {
+          setSelectedCity(JSON.parse(savedLoc));
+        } catch (e) {}
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }, []);
 
   useEffect(() => {
     try {
@@ -136,6 +184,28 @@ export default function WeatherDashboard() {
         onToggleUnit={setUnit}
         onRefresh={handleRefresh}
         loading={loading}
+        onOpenLocationDialog={() => setShowLocationDialog(true)}
+      />
+
+      {/* Location Permission & Telemetry Dialog */}
+      <LocationPermissionDialog
+        isOpen={showLocationDialog}
+        onClose={() => setShowLocationDialog(false)}
+        onLocationDetected={(loc) => {
+          setSelectedCity(loc);
+          handleSelectCity(loc);
+        }}
+        onSelectManual={() => {
+          // Dismiss dialog to allow manual searching
+        }}
+        onDefaultCapital={() => {
+          setSelectedCity({
+            name: 'New Delhi',
+            state: 'Delhi',
+            lat: 28.6139,
+            lon: 77.2090
+          });
+        }}
       />
 
       {/* Main Container */}
