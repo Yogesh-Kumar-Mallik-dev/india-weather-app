@@ -1,0 +1,12 @@
+{
+  "name": "india-weather-monorepo",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "node run-dev.js",
+    "start": "node run-dev.js"
+  }
+}
