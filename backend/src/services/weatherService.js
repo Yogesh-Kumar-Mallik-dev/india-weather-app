@@ -5,6 +5,7 @@ import { calculateIndianAQI } from '../utils/aqiCalculator.js';
 import { INDIAN_MAJOR_CITIES } from '../data/indianCities.js';
 import { scoreCityMatch, cleanSearchQuery } from '../utils/fuzzyMatcher.js';
 import { fuzzyFindIndianCities } from './citySearchService.js';
+import { lookupIndianPincode } from './pincodeService.js';
 
 // Simple in-memory cache to prevent spamming secretless APIs
 const cache = new Map();
@@ -22,8 +23,9 @@ function setCache(key, data) {
   cache.set(key, { timestamp: Date.now(), data });
 }
 
-export async function fetchFullWeather({ lat, lon, cityName, stateName }) {
-  const cacheKey = `weather_${Number(lat).toFixed(3)}_${Number(lon).toFixed(3)}`;
+export async function fetchFullWeather({ lat, lon, cityName, stateName, pincode }) {
+  const extractedPin = pincode || (cityName ? String(cityName).match(/\b([1-9][0-9]{5})\b/)?.[1] : undefined);
+  const cacheKey = `weather_${Number(lat).toFixed(3)}_${Number(lon).toFixed(3)}_${extractedPin || ''}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
@@ -207,6 +209,7 @@ export async function fetchFullWeather({ lat, lon, cityName, stateName }) {
       name: cityName || 'Custom Coordinates',
       state: stateName || '',
       country: 'India',
+      pincode: extractedPin || undefined,
       lat: Number(lat),
       lon: Number(lon),
       elevation: rawWeather.elevation,
@@ -357,19 +360,76 @@ export async function searchCities(query) {
     return fuzzyFindIndianCities('', 10);
   }
 
-  // 1. Search using maintained country-state-city database (4,242 cities) and Fuse.js
-  const fuseMatches = fuzzyFindIndianCities(query, 10);
+  const trimmed = query.trim();
+
+  // 1. Indian PIN Code Detection (e.g. 110001, 560001, or "PIN 110001")
+  const pinMatch = trimmed.match(/\b([1-9][0-9]{5})\b/);
+  let pincodeResults = [];
+  if (pinMatch) {
+    const pin = pinMatch[1];
+    const pinData = await lookupIndianPincode(pin);
+    if (pinData) {
+      pincodeResults.push({
+        name: `${pinData.locality || pinData.district} (${pin})`,
+        city: pinData.locality,
+        district: pinData.district,
+        state: pinData.state,
+        pincode: pin,
+        region: 'India',
+        lat: pinData.lat,
+        lon: pinData.lon,
+        tag: `PIN ${pin}`,
+        isIndia: true,
+        isPincode: true,
+        score: 0.05
+      });
+
+      // Include up to 3 major sub-post offices if available
+      if (Array.isArray(pinData.postOffices)) {
+        for (const po of pinData.postOffices.slice(0, 3)) {
+          if (po !== pinData.locality) {
+            pincodeResults.push({
+              name: `${po}, ${pinData.district} (${pin})`,
+              city: po,
+              district: pinData.district,
+              state: pinData.state,
+              pincode: pin,
+              region: 'India',
+              lat: pinData.lat,
+              lon: pinData.lon,
+              tag: `PIN ${pin}`,
+              isIndia: true,
+              isPincode: true,
+              score: 0.1
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // If user searched exclusively for a 6-digit PIN code and results were found
+  if (/^[1-9][0-9]{5}$/.test(trimmed) && pincodeResults.length > 0) {
+    return pincodeResults;
+  }
+
+  // 2. Search using maintained country-state-city database (4,242 cities) and Fuse.js
+  const fuseMatches = fuzzyFindIndianCities(trimmed, 10);
+
+  if (pincodeResults.length > 0) {
+    return [...pincodeResults, ...fuseMatches.slice(0, 10 - pincodeResults.length)];
+  }
 
   if (fuseMatches.length >= 3 && fuseMatches[0].score <= 0.3) {
     return fuseMatches;
   }
 
-  // 2. Secondary fallback to Open-Meteo Geocoding API for hyper-local villages / tehsils
+  // 3. Secondary fallback to Open-Meteo Geocoding API for hyper-local villages / tehsils
   try {
     const geoUrl = `${GEOCODING_BASE}/search`;
     const res = await axios.get(geoUrl, {
       params: {
-        name: query.trim(),
+        name: trimmed,
         count: 10,
         language: 'en',
         format: 'json'
@@ -389,7 +449,7 @@ export async function searchCities(query) {
       score: r.country_code === 'IN' ? 0.2 : 0.6
     }));
 
-    const combined = [...fuseMatches];
+    const combined = [...pincodeResults, ...fuseMatches];
     for (const item of formatted) {
       if (!combined.some(c => Math.abs(c.lat - item.lat) < 0.05 && Math.abs(c.lon - item.lon) < 0.05)) {
         combined.push(item);
@@ -398,7 +458,7 @@ export async function searchCities(query) {
 
     return combined.slice(0, 10);
   } catch (err) {
-    return fuseMatches;
+    return [...pincodeResults, ...fuseMatches].slice(0, 10);
   }
 }
 

@@ -14,7 +14,8 @@ import {
   TrendingUp,
   Sparkles,
   X,
-  Star
+  Star,
+  Hash
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -191,7 +192,7 @@ export default function Navbar({
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setIsOpen(true)}
               onKeyDown={handleKeyDown}
-              placeholder="Search any Indian city, district, or PIN (e.g. Dehli, Banglore, Vizag)..."
+              placeholder="Search 4,242+ Indian cities, districts, or 6-digit PIN code (e.g. 110001, 560001)..."
               className="pl-10 pr-10 rounded-2xl bg-secondary/50 border-border/80 focus-visible:ring-primary shadow-inner text-sm"
             />
             {searching ? (
@@ -244,20 +245,46 @@ export default function Navbar({
                       )}
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="p-1 rounded-lg bg-secondary text-primary group-hover:bg-primary group-hover:text-primary-foreground transition">
-                          <MapPin className="w-3.5 h-3.5 shrink-0" />
+                        <div
+                          className={cn(
+                            'p-1 rounded-lg transition shrink-0',
+                            item.isPincode
+                              ? 'bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950'
+                              : 'bg-secondary text-primary group-hover:bg-primary group-hover:text-primary-foreground'
+                          )}
+                        >
+                          {item.isPincode ? (
+                            <Hash className="w-3.5 h-3.5 shrink-0" />
+                          ) : (
+                            <MapPin className="w-3.5 h-3.5 shrink-0" />
+                          )}
                         </div>
                         <div>
-                          <span className="font-semibold text-white">{item.name}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-white">{item.name}</span>
+                            {item.isPincode && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase font-mono">
+                                Postal Index
+                              </span>
+                            )}
+                          </div>
                           {item.state && (
-                            <span className="text-xs text-muted-foreground ml-1.5">
-                              ({item.state})
+                            <span className="text-xs text-muted-foreground block text-left">
+                              {item.district && item.district !== item.city ? `${item.district}, ` : ''}{item.state}
                             </span>
                           )}
                         </div>
                       </div>
                       {item.tag && (
-                        <Badge variant="outline" className="text-[10px] bg-secondary/60">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'text-[10px]',
+                            item.isPincode
+                              ? 'bg-amber-500/10 text-amber-300 border-amber-500/40 font-mono font-bold'
+                              : 'bg-secondary/60'
+                          )}
+                        >
                           {item.tag}
                         </Badge>
                       )}

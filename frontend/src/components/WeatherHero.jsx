@@ -28,7 +28,8 @@ import {
   Share2,
   Check,
   Moon,
-  Gauge
+  Gauge,
+  Hash
 } from 'lucide-react';
 
 export default function WeatherHero({ weather, unit, onFavoritesChange }) {
@@ -131,6 +132,12 @@ export default function WeatherHero({ weather, unit, onFavoritesChange }) {
                 <Badge variant="outline" className="text-[11px] font-mono bg-secondary/40">
                   {location.lat.toFixed(2)}°N, {location.lon.toFixed(2)}°E
                 </Badge>
+
+                {location.pincode && (
+                  <Badge variant="outline" className="text-[11px] font-mono font-bold bg-amber-500/10 text-amber-300 border-amber-500/30 flex items-center gap-1">
+                    <Hash className="w-3 h-3" /> PIN {location.pincode}
+                  </Badge>
+                )}
 
                 {indianAqi?.aqi != null && (
                   <Badge

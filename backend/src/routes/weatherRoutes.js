@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { fetchFullWeather, searchCities, getIndiaStatesOverview } from '../services/weatherService.js';
 import { getRainViewerRadar } from '../services/rainViewerService.js';
 import { reverseGeocodeIndianCity } from '../services/citySearchService.js';
+import { lookupIndianPincode } from '../services/pincodeService.js';
 import { INDIAN_MAJOR_CITIES } from '../data/indianCities.js';
 
 const router = Router();
@@ -13,8 +14,9 @@ router.get('/weather', async (req, res) => {
     const lon = parseFloat(req.query.lon) || 77.2090;
     const cityName = req.query.city || 'New Delhi';
     const stateName = req.query.state || 'Delhi';
+    const pincode = req.query.pincode || req.query.pin;
 
-    const data = await fetchFullWeather({ lat, lon, cityName, stateName });
+    const data = await fetchFullWeather({ lat, lon, cityName, stateName, pincode });
     res.json({ success: true, data });
   } catch (err) {
     console.error('Weather route error:', err);
@@ -47,6 +49,21 @@ router.get('/cities/reverse', async (req, res) => {
   } catch (err) {
     console.error('Reverse geocoding error:', err);
     res.status(500).json({ success: false, error: 'Failed to reverse geocode location' });
+  }
+});
+
+// Indian PIN Code Lookup
+router.get('/pincode/:code', async (req, res) => {
+  try {
+    const code = req.params.code;
+    const data = await lookupIndianPincode(code);
+    if (!data) {
+      return res.status(404).json({ success: false, error: 'Invalid or unknown Indian PIN code' });
+    }
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('PIN code route error:', err);
+    res.status(500).json({ success: false, error: 'Failed to lookup Indian PIN code' });
   }
 });
 
