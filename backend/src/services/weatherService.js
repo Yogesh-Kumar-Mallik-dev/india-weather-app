@@ -4,6 +4,7 @@ import { getWeatherMeta } from '../utils/weatherCodes.js';
 import { calculateIndianAQI } from '../utils/aqiCalculator.js';
 import { INDIAN_MAJOR_CITIES } from '../data/indianCities.js';
 import { scoreCityMatch, cleanSearchQuery } from '../utils/fuzzyMatcher.js';
+import { fuzzyFindIndianCities } from './citySearchService.js';
 
 // Simple in-memory cache to prevent spamming secretless APIs
 const cache = new Map();
@@ -353,38 +354,17 @@ function generateAlerts({ current, weatherMeta, daily, indianAqi, cityName }) {
 
 export async function searchCities(query) {
   if (!query || query.trim().length === 0) {
-    return INDIAN_MAJOR_CITIES.slice(0, 10);
+    return fuzzyFindIndianCities('', 10);
   }
 
-  const cleanQ = cleanSearchQuery(query);
+  // 1. Search using maintained country-state-city database (4,242 cities) and Fuse.js
+  const fuseMatches = fuzzyFindIndianCities(query, 10);
 
-  // 1. Score all curated Indian cities using Levenshtein distance, prefix, and alias scoring
-  const scoredLocal = INDIAN_MAJOR_CITIES.map(city => {
-    const score = scoreCityMatch(city, query);
-    return {
-      ...city,
-      score,
-      isIndia: true,
-      matchType: score >= 90 ? 'exact' : score >= 70 ? 'fuzzy' : 'partial'
-    };
-  })
-    .filter(c => c.score >= 35)
-    .sort((a, b) => b.score - a.score);
-
-  // Check if top match was a typo correction
-  const topMatch = scoredLocal[0];
-  const isTypoCorrection = topMatch && topMatch.score >= 65 && topMatch.score < 95;
-  const suggestedName = isTypoCorrection ? topMatch.name : null;
-
-  // If high-confidence local matches found, return them with suggestion
-  if (scoredLocal.length >= 3 && scoredLocal[0].score >= 70) {
-    return scoredLocal.slice(0, 10).map(c => ({
-      ...c,
-      didYouMean: suggestedName
-    }));
+  if (fuseMatches.length >= 3 && fuseMatches[0].score <= 0.3) {
+    return fuseMatches;
   }
 
-  // 2. Fallback to Open-Meteo Geocoding API with India country filter
+  // 2. Secondary fallback to Open-Meteo Geocoding API for hyper-local villages / tehsils
   try {
     const geoUrl = `${GEOCODING_BASE}/search`;
     const res = await axios.get(geoUrl, {
@@ -406,27 +386,19 @@ export async function searchCities(query) {
       lon: r.longitude,
       tag: r.country_code === 'IN' ? (r.admin1 || 'India') : r.country,
       isIndia: r.country_code === 'IN',
-      score: r.country_code === 'IN' ? 65 : 40
+      score: r.country_code === 'IN' ? 0.2 : 0.6
     }));
 
-    const combined = [...scoredLocal];
+    const combined = [...fuseMatches];
     for (const item of formatted) {
       if (!combined.some(c => Math.abs(c.lat - item.lat) < 0.05 && Math.abs(c.lon - item.lon) < 0.05)) {
         combined.push(item);
       }
     }
 
-    combined.sort((a, b) => (b.isIndia ? 25 : 0) + (b.score || 0) - ((a.isIndia ? 25 : 0) + (a.score || 0)));
-    return combined.slice(0, 10).map(c => ({
-      ...c,
-      didYouMean: suggestedName
-    }));
+    return combined.slice(0, 10);
   } catch (err) {
-    console.error('Geocoding API error:', err.message);
-    return scoredLocal.slice(0, 10).map(c => ({
-      ...c,
-      didYouMean: suggestedName
-    }));
+    return fuseMatches;
   }
 }
 
