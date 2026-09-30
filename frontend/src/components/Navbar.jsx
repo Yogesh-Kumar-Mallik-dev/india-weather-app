@@ -14,19 +14,22 @@ import {
   TrendingUp,
   Sparkles,
   X,
-  Star,
-  Hash
+  Hash,
+  CornerDownLeft,
+  SlidersHorizontal
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 const POPULAR_METROS = [
-  { name: 'New Delhi', state: 'Delhi', lat: 28.6139, lon: 77.2090 },
-  { name: 'Mumbai', state: 'Maharashtra', lat: 19.0760, lon: 72.8777 },
-  { name: 'Bengaluru', state: 'Karnataka', lat: 12.9716, lon: 77.5946 },
-  { name: 'Kolkata', state: 'West Bengal', lat: 22.5726, lon: 88.3639 },
-  { name: 'Chennai', state: 'Tamil Nadu', lat: 13.0827, lon: 80.2707 },
-  { name: 'Hyderabad', state: 'Telangana', lat: 17.3850, lon: 78.4867 },
+  { name: 'New Delhi', state: 'Delhi', region: 'North', lat: 28.6139, lon: 77.2090 },
+  { name: 'Mumbai', state: 'Maharashtra', region: 'West', lat: 19.0760, lon: 72.8777 },
+  { name: 'Bengaluru', state: 'Karnataka', region: 'South', lat: 12.9716, lon: 77.5946 },
+  { name: 'Hyderabad', state: 'Telangana', region: 'South', lat: 17.3850, lon: 78.4867 },
+  { name: 'Kolkata', state: 'West Bengal', region: 'East', lat: 22.5726, lon: 88.3639 },
+  { name: 'Chennai', state: 'Tamil Nadu', region: 'South', lat: 13.0827, lon: 80.2707 },
+  { name: 'Ahmedabad', state: 'Gujarat', region: 'West', lat: 23.0225, lon: 72.5714 },
+  { name: 'Jaipur', state: 'Rajasthan', region: 'North', lat: 26.9124, lon: 75.7873 },
 ];
 
 export default function Navbar({
@@ -40,6 +43,7 @@ export default function Navbar({
 }) {
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [filterType, setFilterType] = useState('all'); // 'all' | 'cities' | 'pincodes'
   const [isOpen, setIsOpen] = useState(false);
   const [searching, setSearching] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -61,7 +65,7 @@ export default function Navbar({
 
   const saveRecentSearch = (city) => {
     try {
-      const updated = [city, ...recentSearches.filter(c => c.name !== city.name)].slice(0, 5);
+      const updated = [city, ...recentSearches.filter(c => c.name !== city.name)].slice(0, 6);
       setRecentSearches(updated);
       localStorage.setItem('mausam_recent_cities', JSON.stringify(updated));
     } catch (e) {
@@ -69,10 +73,25 @@ export default function Navbar({
     }
   };
 
+  const removeRecentSearch = (e, cityName) => {
+    e.stopPropagation();
+    const updated = recentSearches.filter(c => c.name !== cityName);
+    setRecentSearches(updated);
+    try {
+      localStorage.setItem('mausam_recent_cities', JSON.stringify(updated));
+    } catch (err) {
+      console.warn(err);
+    }
+  };
+
   const clearRecentSearches = (e) => {
     e.stopPropagation();
     setRecentSearches([]);
-    localStorage.removeItem('mausam_recent_cities');
+    try {
+      localStorage.removeItem('mausam_recent_cities');
+    } catch (err) {
+      console.warn(err);
+    }
   };
 
   // Click outside to close
@@ -86,7 +105,20 @@ export default function Navbar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounced search with typo tolerance
+  // Global keyboard shortcut: Ctrl+K or Cmd+K to focus search
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        inputRef.current?.focus();
+        setIsOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
+  // Debounced search with typo tolerance & PIN code awareness
   useEffect(() => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -110,20 +142,28 @@ export default function Navbar({
       } finally {
         setSearching(false);
       }
-    }, 220);
+    }, 200);
 
     return () => clearTimeout(timer);
   }, [query]);
 
+  // Filter results based on selected tab
+  const displayedResults = searchResults.filter((item) => {
+    if (filterType === 'cities') return !item.isPincode;
+    if (filterType === 'pincodes') return item.isPincode;
+    return true;
+  });
+
   // Handle keyboard navigation (Arrow Up/Down, Enter, Esc)
   const handleKeyDown = (e) => {
     if (!isOpen) {
-      if (e.key === 'ArrowDown') setIsOpen(true);
+      if (e.key === 'ArrowDown' || e.key === 'Enter') {
+        setIsOpen(true);
+      }
       return;
     }
 
-    const listLength = searchResults.length > 0 ? searchResults.length : 0;
-    if (listLength === 0) return;
+    const listLength = displayedResults.length;
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -134,12 +174,13 @@ export default function Navbar({
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (selectedIndex >= 0 && selectedIndex < listLength) {
-        selectCityAndClose(searchResults[selectedIndex]);
-      } else if (searchResults.length > 0) {
-        selectCityAndClose(searchResults[0]);
+        selectCityAndClose(displayedResults[selectedIndex]);
+      } else if (displayedResults.length > 0) {
+        selectCityAndClose(displayedResults[0]);
       }
     } else if (e.key === 'Escape') {
       setIsOpen(false);
+      inputRef.current?.blur();
     }
   };
 
@@ -174,17 +215,19 @@ export default function Navbar({
 
   // Typo detection suggestion
   const didYouMean = searchResults.length > 0 && searchResults[0].didYouMean;
+  const pinCount = searchResults.filter((r) => r.isPincode).length;
+  const cityCount = searchResults.filter((r) => !r.isPincode).length;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/80 bg-background/85 backdrop-blur-2xl px-4 lg:px-8 py-3 transition-all shadow-md">
+    <header className="sticky top-0 z-50 border-b border-border/80 bg-background/90 backdrop-blur-2xl px-4 lg:px-8 py-3 transition-all shadow-md">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Brand with Logo */}
         <Logo size="md" showText={true} showBadge={true} />
 
         {/* Enhanced City Search Bar */}
-        <div className="relative w-full md:w-[420px]" ref={dropdownRef}>
-          <div className="relative flex items-center">
-            <Search className="absolute left-3.5 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <div className="relative w-full md:w-[460px] lg:w-[540px]" ref={dropdownRef}>
+          <div className="relative flex items-center group">
+            <Search className="absolute left-3.5 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
             <Input
               ref={inputRef}
               type="text"
@@ -192,164 +235,320 @@ export default function Navbar({
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setIsOpen(true)}
               onKeyDown={handleKeyDown}
-              placeholder="Search 4,242+ Indian cities, districts, or 6-digit PIN code (e.g. 110001, 560001)..."
-              className="pl-10 pr-10 rounded-2xl bg-secondary/50 border-border/80 focus-visible:ring-primary shadow-inner text-sm"
+              placeholder="Search 4,242+ Indian cities, districts or 6-digit PIN..."
+              className="pl-10 pr-20 h-10 rounded-2xl bg-secondary/40 border-border/80 group-focus-within:border-primary/50 group-focus-within:ring-2 group-focus-within:ring-primary/20 shadow-inner text-sm transition-all"
             />
-            {searching ? (
-              <RefreshCw className="absolute right-3.5 w-4 h-4 text-primary animate-spin" />
-            ) : query.trim() ? (
-              <button
-                onClick={() => {
-                  setQuery('');
-                  setSearchResults([]);
-                  inputRef.current?.focus();
-                }}
-                className="absolute right-3.5 p-0.5 rounded-full hover:bg-secondary text-muted-foreground hover:text-white"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            ) : null}
+            
+            {/* Quick action badges & spinner inside input */}
+            <div className="absolute right-3 flex items-center gap-1.5">
+              {searching ? (
+                <RefreshCw className="w-4 h-4 text-primary animate-spin" />
+              ) : query.trim() ? (
+                <button
+                  onClick={() => {
+                    setQuery('');
+                    setSearchResults([]);
+                    inputRef.current?.focus();
+                  }}
+                  className="p-1 rounded-full hover:bg-secondary text-muted-foreground hover:text-white transition"
+                  title="Clear input"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-medium text-muted-foreground/80 bg-secondary/80 rounded border border-border/60 pointer-events-none shadow-sm">
+                  ⌘K
+                </kbd>
+              )}
+            </div>
           </div>
 
           {/* Autocomplete Dropdown with Typo Correction & Popular Metros */}
           {isOpen && (
-            <div className="absolute top-full mt-2 w-full rounded-2xl border border-border/90 bg-popover/95 backdrop-blur-2xl shadow-2xl py-2 max-h-80 overflow-y-auto z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute top-full mt-2 w-full rounded-2xl border border-border/90 bg-popover/98 backdrop-blur-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              {/* Category Filter Chips (shown when search results exist) */}
+              {searchResults.length > 0 && (
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/50 bg-secondary/30 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFilterType('all')}
+                      className={cn(
+                        'px-2 py-0.5 rounded-lg font-medium transition text-[11px]',
+                        filterType === 'all'
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+                      )}
+                    >
+                      All ({searchResults.length})
+                    </button>
+                    {cityCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setFilterType('cities')}
+                        className={cn(
+                          'px-2 py-0.5 rounded-lg font-medium transition text-[11px]',
+                          filterType === 'cities'
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+                        )}
+                      >
+                        Cities ({cityCount})
+                      </button>
+                    )}
+                    {pinCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setFilterType('pincodes')}
+                        className={cn(
+                          'px-2 py-0.5 rounded-lg font-medium transition text-[11px] flex items-center gap-1',
+                          filterType === 'pincodes'
+                            ? 'bg-amber-500 text-slate-950 font-bold shadow-sm'
+                            : 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10'
+                        )}
+                      >
+                        <Hash className="w-2.5 h-2.5" />
+                        PIN Codes ({pinCount})
+                      </button>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                    ↑↓ Navigate
+                  </span>
+                </div>
+              )}
+
               {/* Typo Correction Banner */}
               {didYouMean && (
-                <div className="mx-3 my-1.5 p-2 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-between text-xs">
+                <div className="mx-3 my-2 p-2 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1.5 text-primary font-medium">
                     <Sparkles className="w-3.5 h-3.5 shrink-0" />
                     <span>Did you mean <strong>{didYouMean}</strong>?</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground">Auto-corrected</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-medium">
+                    Auto-corrected
+                  </span>
                 </div>
               )}
 
-              {/* Active Search Results */}
-              {searchResults.length > 0 ? (
-                <div className="divide-y divide-border/40">
-                  <div className="px-3.5 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-between">
-                    <span>Matching Locations</span>
-                    <span className="text-[10px] text-primary">Press ↑↓ to navigate</span>
-                  </div>
-                  {searchResults.map((item, idx) => (
-                    <button
-                      key={`${item.name}-${item.lat}-${idx}`}
-                      onClick={() => selectCityAndClose(item)}
-                      onMouseEnter={() => setSelectedIndex(idx)}
-                      className={cn(
-                        'w-full text-left px-3.5 py-2.5 text-sm transition flex items-center justify-between group',
-                        selectedIndex === idx
-                          ? 'bg-primary/20 text-white'
-                          : 'text-foreground hover:bg-secondary/70'
-                      )}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className={cn(
-                            'p-1 rounded-lg transition shrink-0',
-                            item.isPincode
-                              ? 'bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950'
-                              : 'bg-secondary text-primary group-hover:bg-primary group-hover:text-primary-foreground'
-                          )}
-                        >
-                          {item.isPincode ? (
-                            <Hash className="w-3.5 h-3.5 shrink-0" />
-                          ) : (
-                            <MapPin className="w-3.5 h-3.5 shrink-0" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-white">{item.name}</span>
-                            {item.isPincode && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase font-mono">
-                                Postal Index
-                              </span>
-                            )}
-                          </div>
-                          {item.state && (
-                            <span className="text-xs text-muted-foreground block text-left">
-                              {item.district && item.district !== item.city ? `${item.district}, ` : ''}{item.state}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {item.tag && (
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            'text-[10px]',
-                            item.isPincode
-                              ? 'bg-amber-500/10 text-amber-300 border-amber-500/40 font-mono font-bold'
-                              : 'bg-secondary/60'
-                          )}
-                        >
-                          {item.tag}
-                        </Badge>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              ) : query.trim() ? (
-                <div className="px-4 py-6 text-center text-xs text-muted-foreground">
-                  No exact match for "{query}". Try alternative spellings or district names.
-                </div>
-              ) : (
-                /* When search input is empty: show Recent Searches & Popular Metros */
-                <div className="space-y-3 px-3 py-1">
-                  {recentSearches.length > 0 && (
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-1">
-                        <span className="flex items-center gap-1">
-                          <History className="w-3 h-3" /> Recent Searches
-                        </span>
+              {/* Scrollable Content Container */}
+              <div className="max-h-80 overflow-y-auto divide-y divide-border/30">
+                {displayedResults.length > 0 ? (
+                  <div>
+                    {displayedResults.map((item, idx) => {
+                      const isSelected = selectedIndex === idx;
+                      return (
                         <button
-                          onClick={clearRecentSearches}
-                          className="text-[10px] text-muted-foreground hover:text-rose-400 transition"
+                          key={`${item.name}-${item.lat}-${idx}`}
+                          onClick={() => selectCityAndClose(item)}
+                          onMouseEnter={() => setSelectedIndex(idx)}
+                          className={cn(
+                            'w-full text-left px-3.5 py-2.5 text-sm transition flex items-center justify-between group',
+                            isSelected
+                              ? 'bg-primary/20 text-white'
+                              : 'text-foreground hover:bg-secondary/60'
+                          )}
                         >
-                          Clear
+                          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                            <div
+                              className={cn(
+                                'p-1.5 rounded-xl transition shrink-0',
+                                item.isPincode
+                                  ? 'bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950'
+                                  : 'bg-secondary text-primary group-hover:bg-primary group-hover:text-primary-foreground'
+                              )}
+                            >
+                              {item.isPincode ? (
+                                <Hash className="w-3.5 h-3.5 shrink-0" />
+                              ) : (
+                                <MapPin className="w-3.5 h-3.5 shrink-0" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-white truncate">{item.name}</span>
+                                {item.isPincode && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase font-mono shrink-0">
+                                    Postal Index
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+                                {item.state && (
+                                  <span>
+                                    {item.district && item.district !== item.name ? `${item.district}, ` : ''}{item.state}
+                                  </span>
+                                )}
+                                {item.lat && item.lon && (
+                                  <span className="text-[10px] text-muted-foreground/60 font-mono hidden sm:inline">
+                                    ({Number(item.lat).toFixed(2)}°N, {Number(item.lon).toFixed(2)}°E)
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 flex items-center gap-2">
+                            {isSelected ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-lg bg-primary text-primary-foreground shadow-sm">
+                                Select <CornerDownLeft className="w-2.5 h-2.5" />
+                              </span>
+                            ) : item.tag ? (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  'text-[10px] hidden sm:inline-flex',
+                                  item.isPincode
+                                    ? 'bg-amber-500/10 text-amber-300 border-amber-500/40 font-mono font-bold'
+                                    : 'bg-secondary/60'
+                                )}
+                              >
+                                {item.tag}
+                              </Badge>
+                            ) : null}
+                          </div>
                         </button>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 pt-0.5">
-                        {recentSearches.map((city, i) => (
+                      );
+                    })}
+                  </div>
+                ) : query.trim() ? (
+                  <div className="px-4 py-8 text-center">
+                    <div className="w-9 h-9 mx-auto mb-2 rounded-full bg-secondary/80 flex items-center justify-center text-muted-foreground">
+                      <Search className="w-4 h-4" />
+                    </div>
+                    <div className="text-xs font-semibold text-foreground">No matches found for "{query}"</div>
+                    <p className="text-[11px] text-muted-foreground mt-1 max-w-xs mx-auto">
+                      Try typing a district name, regional hub, or a valid 6-digit Indian PIN code (e.g. 110001, 560001).
+                    </p>
+                  </div>
+                ) : (
+                  /* Empty state: Recent searches, top metros & PIN code guide */
+                  <div className="p-3 space-y-3.5">
+                    {/* Recent Searches */}
+                    {recentSearches.length > 0 && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-1">
+                          <span className="flex items-center gap-1.5">
+                            <History className="w-3.5 h-3.5 text-primary" /> Recent Searches
+                          </span>
                           <button
-                            key={i}
-                            onClick={() => selectCityAndClose(city)}
-                            className="px-2.5 py-1 rounded-xl bg-secondary/80 hover:bg-secondary text-xs text-foreground border border-border/60 transition flex items-center gap-1.5"
+                            onClick={clearRecentSearches}
+                            className="text-[10px] font-medium text-muted-foreground hover:text-rose-400 transition"
                           >
-                            <MapPin className="w-3 h-3 text-primary" />
-                            <span>{city.name}</span>
+                            Clear All
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {recentSearches.map((city, i) => (
+                            <div
+                              key={i}
+                              onClick={() => selectCityAndClose(city)}
+                              className="group px-2.5 py-1 rounded-xl bg-secondary/70 hover:bg-secondary text-xs text-foreground border border-border/60 hover:border-primary/40 transition flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <MapPin className="w-3 h-3 text-primary shrink-0" />
+                              <span className="font-medium">{city.name}</span>
+                              <button
+                                onClick={(e) => removeRecentSearch(e, city.name)}
+                                className="opacity-0 group-hover:opacity-100 hover:text-rose-400 transition p-0.5"
+                                title="Remove from recent"
+                              >
+                                <X className="w-2.5 h-2.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Popular Indian Metros (8 major regional hubs) */}
+                    <div className="space-y-1.5">
+                      <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-1 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <TrendingUp className="w-3.5 h-3.5 text-amber-400" /> Key Indian Metros
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-normal">8 Major Hubs</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                        {POPULAR_METROS.map((metro) => (
+                          <button
+                            key={metro.name}
+                            onClick={() => selectCityAndClose(metro)}
+                            className="px-3 py-2 rounded-xl bg-secondary/40 hover:bg-primary/15 text-left text-xs text-foreground border border-border/50 hover:border-primary/40 transition flex items-center justify-between group"
+                          >
+                            <div>
+                              <span className="font-semibold group-hover:text-primary transition block">
+                                {metro.name}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">
+                                {metro.state}
+                              </span>
+                            </div>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-secondary/80 text-muted-foreground border border-border/60 uppercase font-mono">
+                              {metro.region}
+                            </span>
                           </button>
                         ))}
                       </div>
                     </div>
-                  )}
 
-                  {/* Popular Metros Quick Pick */}
-                  <div className="space-y-1">
-                    <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-1 flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3 text-primary" /> Key Indian Metros
-                    </div>
-                    <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-                      {POPULAR_METROS.map((metro) => (
-                        <button
-                          key={metro.name}
-                          onClick={() => selectCityAndClose(metro)}
-                          className="px-3 py-2 rounded-xl bg-secondary/40 hover:bg-primary/15 text-left text-xs text-foreground border border-border/50 transition flex items-center justify-between group"
+                    {/* Quick PIN Code Tip */}
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs flex items-start gap-2">
+                      <Hash className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                        <strong className="text-amber-300">Indian Postal Code Search:</strong> Enter any 6-digit PIN (e.g.{' '}
+                        <span
+                          onClick={() => {
+                            setQuery('110001');
+                            inputRef.current?.focus();
+                          }}
+                          className="underline cursor-pointer hover:text-white"
                         >
-                          <span className="font-semibold group-hover:text-primary transition">
-                            {metro.name}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {metro.state}
-                          </span>
-                        </button>
-                      ))}
+                          110001
+                        </span>
+                        ,{' '}
+                        <span
+                          onClick={() => {
+                            setQuery('560001');
+                            inputRef.current?.focus();
+                          }}
+                          className="underline cursor-pointer hover:text-white"
+                        >
+                          560001
+                        </span>
+                        ,{' '}
+                        <span
+                          onClick={() => {
+                            setQuery('400001');
+                            inputRef.current?.focus();
+                          }}
+                          className="underline cursor-pointer hover:text-white"
+                        >
+                          400001
+                        </span>
+                        ) for hyper-local neighborhood weather.
+                      </p>
                     </div>
                   </div>
+                )}
+              </div>
+
+              {/* Dropdown Footer Toolbar */}
+              <div className="px-3.5 py-2 border-t border-border/50 bg-secondary/20 flex items-center justify-between text-[11px] text-muted-foreground">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1 py-0.2 rounded bg-secondary border border-border/60 font-mono text-[9px]">↑↓</kbd> Navigate
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1 py-0.2 rounded bg-secondary border border-border/60 font-mono text-[9px]">↵</kbd> Select
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1 py-0.2 rounded bg-secondary border border-border/60 font-mono text-[9px]">Esc</kbd> Close
+                  </span>
                 </div>
-              )}
+                <span className="text-[10px] text-muted-foreground/80 hidden sm:inline">
+                  4,242+ Indian Cities & PIN Codes
+                </span>
+              </div>
             </div>
           )}
         </div>
