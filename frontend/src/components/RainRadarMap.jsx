@@ -21,17 +21,23 @@ const BASEMAP_TILES = {
   dark: {
     name: 'Meteorological Dark',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-    attribution: '© Esri — Meteorological Base Canvas'
+    attribution: '© Esri — Meteorological Base Canvas',
+    maxNativeZoom: 16,
+    maxZoom: 19
   },
   satellite: {
     name: 'High-Res Satellite',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: '© Esri Earth Imagery'
+    attribution: '© Esri Earth Imagery',
+    maxNativeZoom: 19,
+    maxZoom: 19
   },
   osm: {
     name: 'OpenStreetMap',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '© OpenStreetMap contributors'
+    attribution: '© OpenStreetMap contributors',
+    maxNativeZoom: 19,
+    maxZoom: 19
   }
 };
 
@@ -96,16 +102,20 @@ export default function RainRadarMap({ lat, lon, cityName }) {
       L = leafletModule.default || leafletModule;
 
       if (!mapInstanceRef.current && mapContainerRef.current) {
+        const currentCfg = BASEMAP_TILES[activeBasemap] || BASEMAP_TILES.dark;
         const map = L.map(mapContainerRef.current, {
           center: [lat || 20.5937, lon || 78.9629],
           zoom: 6,
+          minZoom: 3,
+          maxZoom: 19,
           zoomControl: true,
           attributionControl: false
         });
 
-        // Use ESRI Dark Canvas: 100% Free, Secretless, No watermark/key restrictions
-        baseTileLayerRef.current = L.tileLayer(BASEMAP_TILES[activeBasemap].url, {
-          maxZoom: 18,
+        // Prevent Esri "Zoom level not supported" warning tile by enforcing maxNativeZoom
+        baseTileLayerRef.current = L.tileLayer(currentCfg.url, {
+          maxNativeZoom: currentCfg.maxNativeZoom || 16,
+          maxZoom: currentCfg.maxZoom || 19,
           subdomains: ['a', 'b', 'c']
         }).addTo(map);
 
@@ -133,8 +143,10 @@ export default function RainRadarMap({ lat, lon, cityName }) {
         map.removeLayer(baseTileLayerRef.current);
       }
 
-      baseTileLayerRef.current = L.tileLayer(BASEMAP_TILES[activeBasemap].url, {
-        maxZoom: 18,
+      const currentCfg = BASEMAP_TILES[activeBasemap] || BASEMAP_TILES.dark;
+      baseTileLayerRef.current = L.tileLayer(currentCfg.url, {
+        maxNativeZoom: currentCfg.maxNativeZoom || 16,
+        maxZoom: currentCfg.maxZoom || 19,
         subdomains: ['a', 'b', 'c']
       }).addTo(map);
 
@@ -192,7 +204,9 @@ export default function RainRadarMap({ lat, lon, cityName }) {
       radarLayerRef.current = L.tileLayer(tileUrl, {
         opacity: radarOpacity,
         zIndex: 500,
-        tileSize: 256
+        tileSize: 256,
+        maxNativeZoom: 12,
+        maxZoom: 19
       }).addTo(map);
     });
   }, [radarFrames, currentFrameIndex, radarHost, radarOpacity, activePalette]);
