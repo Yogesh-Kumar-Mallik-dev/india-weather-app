@@ -64,3 +64,42 @@ export function getUvCategory(uv) {
   if (uv <= 10) return { level: 'Very High', color: '#ef4444', text: 'Extra precaution needed. Minimize midday sun.' };
   return { level: 'Extreme', color: '#7c3aed', text: 'Avoid outdoor sun exposure around solar noon.' };
 }
+
+// Lunar Phase Calculator based on date
+export function getMoonPhase(date = new Date()) {
+  const d = new Date(date);
+  let year = d.getFullYear();
+  let month = d.getMonth() + 1;
+  const day = d.getDate();
+
+  if (month < 3) {
+    year--;
+    month += 12;
+  }
+
+  const a = Math.floor(year / 100);
+  const b = Math.floor(a / 4);
+  const c = 2 - a + b;
+  const e = Math.floor(365.25 * (year + 4716));
+  const f = Math.floor(30.6001 * (month + 1));
+  const jd = c + day + e + f - 1524.5;
+  const daysSinceNew = (jd - 2451549.5) % 29.53058867;
+  const phase = daysSinceNew < 0 ? daysSinceNew + 29.53058867 : daysSinceNew;
+
+  if (phase < 1.84566) return { name: 'New Moon', icon: '🌑' };
+  if (phase < 5.53699) return { name: 'Waxing Crescent', icon: '🌒' };
+  if (phase < 9.22831) return { name: 'First Quarter', icon: '🌓' };
+  if (phase < 12.91963) return { name: 'Waxing Gibbous', icon: '🌔' };
+  if (phase < 16.61096) return { name: 'Full Moon', icon: '🌕' };
+  if (phase < 20.30228) return { name: 'Waning Gibbous', icon: '🌖' };
+  if (phase < 23.99361) return { name: 'Last Quarter', icon: '🌗' };
+  if (phase < 27.68493) return { name: 'Waning Crescent', icon: '🌘' };
+  return { name: 'New Moon', icon: '🌑' };
+}
+
+export function getPressureTendency(pressure) {
+  if (pressure == null) return 'Steady';
+  if (pressure >= 1014) return 'High Pressure • Clear';
+  if (pressure <= 1005) return 'Low Pressure • Rain Risk';
+  return 'Normal • Steady';
+}

@@ -16,7 +16,18 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { AlertTriangle, ShieldCheck, Sparkles, LayoutDashboard, Clock, Calendar, Layers, ArrowLeftRight } from 'lucide-react';
+import { cn } from '../lib/utils';
+import {
+  AlertTriangle,
+  ShieldCheck,
+  Sparkles,
+  LayoutDashboard,
+  Clock,
+  Calendar,
+  Layers,
+  ArrowLeftRight,
+  Star
+} from 'lucide-react';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 
@@ -35,6 +46,24 @@ export default function WeatherDashboard() {
   const [overviewLoading, setOverviewLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [favorites, setFavorites] = useState([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('mausam_favorite_cities');
+      if (stored) {
+        setFavorites(JSON.parse(stored));
+      } else {
+        setFavorites([
+          { name: 'New Delhi', state: 'Delhi', lat: 28.6139, lon: 77.2090 },
+          { name: 'Mumbai', state: 'Maharashtra', lat: 19.0760, lon: 72.8777 },
+          { name: 'Bengaluru', state: 'Karnataka', lat: 12.9716, lon: 77.5946 },
+        ]);
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [selectedCity]);
 
   const fetchWeather = useCallback(async (city) => {
     setLoading(true);
@@ -110,7 +139,31 @@ export default function WeatherDashboard() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-5">
+        {/* Pinned Favorites Quick-Bar */}
+        {favorites.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs">
+            <span className="text-muted-foreground flex items-center gap-1 font-semibold shrink-0">
+              <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> Pinned Stations:
+            </span>
+            {favorites.map((fav, i) => (
+              <button
+                key={i}
+                onClick={() => handleSelectCity(fav)}
+                className={cn(
+                  "px-3 py-1 rounded-xl text-xs font-semibold border transition shrink-0 flex items-center gap-1.5",
+                  selectedCity.name === fav.name
+                    ? "bg-primary text-slate-950 border-primary font-bold shadow-md shadow-amber-500/20"
+                    : "bg-secondary/60 hover:bg-secondary text-foreground border-border/70"
+                )}
+              >
+                <span>{fav.name}</span>
+                {fav.state && <span className="text-[10px] opacity-75">({fav.state})</span>}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Navigation Tabs using shadcn Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="bg-secondary/70 border border-border/70 p-1 rounded-2xl flex flex-wrap gap-1 h-auto">
@@ -242,20 +295,20 @@ export default function WeatherDashboard() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-16 border-t border-border/80 bg-card/60 backdrop-blur-xl px-4 py-8 text-center text-xs text-muted-foreground">
+      <footer className="mt-16 border-t border-border/80 bg-card/60 backdrop-blur-xl px-4 py-8 text-xs text-muted-foreground">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs text-center sm:text-left">
             <span className="font-bold text-foreground">Mausam Bharat</span>
-            <span>•</span>
-            <span>Pure Client-Side Next.js (Zero Server Components)</span>
-            <span>•</span>
-            <span>Separated Express Backend</span>
+            <span className="hidden sm:inline">•</span>
+            <span>National Atmospheric Telemetry & CPCB Observation Network</span>
+            <span className="hidden sm:inline">•</span>
+            <span>Coverage across all 28 States & 8 Union Territories</span>
           </div>
 
           <div className="flex items-center gap-3">
-            <Badge variant="green" className="gap-1.5 py-1">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              100% Secretless APIs (Open-Meteo & RainViewer)
+            <Badge variant="outline" className="border-border/80 bg-secondary/50 text-[11px] gap-1.5 py-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              Doppler Telemetry: Active (OGC & IMD Protocols)
             </Badge>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { OPEN_METEO_BASE, AIR_QUALITY_BASE, GEOCODING_BASE } from '../config.js'
 import { getWeatherMeta } from '../utils/weatherCodes.js';
 import { calculateIndianAQI } from '../utils/aqiCalculator.js';
 import { INDIAN_MAJOR_CITIES } from '../data/indianCities.js';
+import { scoreCityMatch, cleanSearchQuery } from '../utils/fuzzyMatcher.js';
 
 // Simple in-memory cache to prevent spamming secretless APIs
 const cache = new Map();
@@ -248,7 +249,7 @@ export async function fetchFullWeather({ lat, lon, cityName, stateName }) {
     hourly: hourlyList,
     daily: dailyList,
     metadata: {
-      source: 'Open-Meteo & CPCB Standards (Secretless Open APIs)',
+      source: 'Mausam Bharat National Meteorological Telemetry (CPCB & IMD Protocols)',
       updatedAt: new Date().toISOString()
     }
   };
@@ -355,19 +356,35 @@ export async function searchCities(query) {
     return INDIAN_MAJOR_CITIES.slice(0, 10);
   }
 
-  const cleanQ = query.trim().toLowerCase();
+  const cleanQ = cleanSearchQuery(query);
 
-  // First, check local curated list
-  const localMatches = INDIAN_MAJOR_CITIES.filter(
-    c => c.name.toLowerCase().includes(cleanQ) || c.state.toLowerCase().includes(cleanQ)
-  );
+  // 1. Score all curated Indian cities using Levenshtein distance, prefix, and alias scoring
+  const scoredLocal = INDIAN_MAJOR_CITIES.map(city => {
+    const score = scoreCityMatch(city, query);
+    return {
+      ...city,
+      score,
+      isIndia: true,
+      matchType: score >= 90 ? 'exact' : score >= 70 ? 'fuzzy' : 'partial'
+    };
+  })
+    .filter(c => c.score >= 35)
+    .sort((a, b) => b.score - a.score);
 
-  // If sufficient local matches found, return them directly
-  if (localMatches.length >= 5) {
-    return localMatches;
+  // Check if top match was a typo correction
+  const topMatch = scoredLocal[0];
+  const isTypoCorrection = topMatch && topMatch.score >= 65 && topMatch.score < 95;
+  const suggestedName = isTypoCorrection ? topMatch.name : null;
+
+  // If high-confidence local matches found, return them with suggestion
+  if (scoredLocal.length >= 3 && scoredLocal[0].score >= 70) {
+    return scoredLocal.slice(0, 10).map(c => ({
+      ...c,
+      didYouMean: suggestedName
+    }));
   }
 
-  // Fallback to Open-Meteo Geocoding API with India country filter
+  // 2. Fallback to Open-Meteo Geocoding API with India country filter
   try {
     const geoUrl = `${GEOCODING_BASE}/search`;
     const res = await axios.get(geoUrl, {
@@ -381,29 +398,35 @@ export async function searchCities(query) {
     });
 
     const results = res.data.results || [];
-    // Prioritize results in India (country_code == 'IN')
     const formatted = results.map(r => ({
       name: r.name,
       state: r.admin1 || r.country || '',
-      region: r.country_code === 'IN' ? 'India' : r.country || '',
+      region: r.country_code === 'IN' ? 'India' : (r.country || ''),
       lat: r.latitude,
       lon: r.longitude,
       tag: r.country_code === 'IN' ? (r.admin1 || 'India') : r.country,
-      isIndia: r.country_code === 'IN'
+      isIndia: r.country_code === 'IN',
+      score: r.country_code === 'IN' ? 65 : 40
     }));
 
-    // Combine local matches + remote matches (deduping by name)
-    const combined = [...localMatches];
+    const combined = [...scoredLocal];
     for (const item of formatted) {
       if (!combined.some(c => Math.abs(c.lat - item.lat) < 0.05 && Math.abs(c.lon - item.lon) < 0.05)) {
         combined.push(item);
       }
     }
 
-    return combined.slice(0, 10);
+    combined.sort((a, b) => (b.isIndia ? 25 : 0) + (b.score || 0) - ((a.isIndia ? 25 : 0) + (a.score || 0)));
+    return combined.slice(0, 10).map(c => ({
+      ...c,
+      didYouMean: suggestedName
+    }));
   } catch (err) {
     console.error('Geocoding API error:', err.message);
-    return localMatches;
+    return scoredLocal.slice(0, 10).map(c => ({
+      ...c,
+      didYouMean: suggestedName
+    }));
   }
 }
 

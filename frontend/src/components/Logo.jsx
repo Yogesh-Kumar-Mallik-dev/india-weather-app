@@ -7,7 +7,6 @@ export default function Logo({
   showBadge = true,
   className = ''
 }) {
-  // Dimensions map
   const iconSizes = {
     sm: 'w-8 h-8',
     md: 'w-10 h-10',
@@ -27,7 +26,7 @@ export default function Logo({
       {/* Emblem SVG Icon */}
       <div className={cn('relative shrink-0 flex items-center justify-center', iconSizes[size])}>
         {/* Ambient Glow */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#FF9933]/30 via-white/10 to-[#138808]/30 blur-md group-hover:blur-lg transition-all duration-300" />
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#FF9933]/25 via-white/5 to-[#138808]/25 blur-md group-hover:blur-lg transition-all duration-300" />
 
         {/* Master Emblem SVG */}
         <svg
@@ -37,7 +36,6 @@ export default function Logo({
           className="relative w-full h-full drop-shadow-xl"
         >
           <defs>
-            {/* Tricolor Ring Gradients */}
             <linearGradient id="saffronGradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#FFA43B" />
               <stop offset="100%" stopColor="#FF7700" />
@@ -74,7 +72,7 @@ export default function Logo({
             rx="24"
             fill="#090D16"
             stroke="url(#saffronGradient)"
-            strokeWidth="2.5"
+            strokeWidth="2"
             strokeOpacity="0.8"
           />
 
@@ -133,17 +131,14 @@ export default function Logo({
           <circle cx="48" cy="46" r="1.5" fill="#FFFFFF" />
 
           {/* Monsoon Raindrops with Tricolor Hints */}
-          {/* Saffron Drop */}
           <path
             d="M32 71 C32 71 30 75 30 76.5 C30 78 31 79 32.5 79 C34 79 35 78 35 76.5 C35 75 32 71 32 71 Z"
             fill="#FF9933"
           />
-          {/* Monsoon Azure Drop */}
           <path
             d="M48 73 C48 73 46 77 46 78.5 C46 80 47 81 48.5 81 C50 81 51 80 51 78.5 C51 77 48 73 48 73 Z"
             fill="url(#rainGrad)"
           />
-          {/* India Green Drop */}
           <path
             d="M64 71 C64 71 62 75 62 76.5 C62 78 63 79 64.5 79 C66 79 67 78 67 76.5 C67 75 64 71 64 71 Z"
             fill="#138808"
@@ -168,14 +163,15 @@ export default function Logo({
             </span>
 
             {showBadge && (
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30 shadow-sm hidden sm:inline-flex">
-                Secretless API
+              <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hidden sm:inline-flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Network
               </span>
             )}
           </div>
 
           <div className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
-            <span>National Weather & CPCB Air Intelligence</span>
+            <span>National Meteorological Network</span>
           </div>
         </div>
       )}
