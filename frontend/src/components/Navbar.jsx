@@ -220,12 +220,20 @@ export default function Navbar({
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/80 bg-background/90 backdrop-blur-2xl px-4 lg:px-8 py-3 transition-all shadow-md">
+      {/* Backdrop overlay to clearly separate search from the main application */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-40 transition-opacity animate-in fade-in duration-200"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Brand with Logo */}
         <Logo size="md" showText={true} showBadge={true} />
 
-        {/* Enhanced City Search Bar */}
-        <div className="relative w-full md:w-[460px] lg:w-[540px]" ref={dropdownRef}>
+        {/* Enhanced City Search Bar with Distinct Background */}
+        <div className={cn("relative w-full md:w-[460px] lg:w-[540px]", isOpen ? "z-50" : "z-30")} ref={dropdownRef}>
           <div className="relative flex items-center group">
             <Search className="absolute left-3.5 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
             <Input
@@ -236,7 +244,7 @@ export default function Navbar({
               onFocus={() => setIsOpen(true)}
               onKeyDown={handleKeyDown}
               placeholder="Search 4,242+ Indian cities, districts or 6-digit PIN..."
-              className="pl-10 pr-20 h-10 rounded-2xl bg-secondary/40 border-border/80 group-focus-within:border-primary/50 group-focus-within:ring-2 group-focus-within:ring-primary/20 shadow-inner text-sm transition-all"
+              className="pl-10 pr-20 h-10 rounded-2xl bg-[#0c1427] hover:bg-[#0f1932] group-focus-within:bg-[#101b37] border-slate-700/80 group-focus-within:border-primary/80 group-focus-within:ring-4 group-focus-within:ring-primary/20 shadow-lg text-slate-100 placeholder:text-slate-400 text-sm transition-all"
             />
             
             {/* Quick action badges & spinner inside input */}
@@ -250,25 +258,25 @@ export default function Navbar({
                     setSearchResults([]);
                     inputRef.current?.focus();
                   }}
-                  className="p-1 rounded-full hover:bg-secondary text-muted-foreground hover:text-white transition"
+                  className="p-1 rounded-full hover:bg-slate-800 text-muted-foreground hover:text-white transition"
                   title="Clear input"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               ) : (
-                <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-medium text-muted-foreground/80 bg-secondary/80 rounded border border-border/60 pointer-events-none shadow-sm">
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono font-medium text-slate-300 bg-slate-800/90 rounded border border-slate-700 pointer-events-none shadow-sm">
                   ⌘K
                 </kbd>
               )}
             </div>
           </div>
 
-          {/* Autocomplete Dropdown with Typo Correction & Popular Metros */}
+          {/* Autocomplete Dropdown with Distinct Contrast Background */}
           {isOpen && (
-            <div className="absolute top-full mt-2 w-full rounded-2xl border border-border/90 bg-popover/98 backdrop-blur-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute top-full mt-2 w-full rounded-2xl border border-slate-700/90 bg-[#0d162c] text-slate-100 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] ring-1 ring-white/10 backdrop-blur-3xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
               {/* Category Filter Chips (shown when search results exist) */}
               {searchResults.length > 0 && (
-                <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/50 bg-secondary/30 text-xs">
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-800 bg-[#080e1e] text-xs">
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -276,8 +284,8 @@ export default function Navbar({
                       className={cn(
                         'px-2 py-0.5 rounded-lg font-medium transition text-[11px]',
                         filterType === 'all'
-                          ? 'bg-primary text-primary-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+                          ? 'bg-primary text-slate-950 font-bold shadow-sm'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/70'
                       )}
                     >
                       All ({searchResults.length})
@@ -289,8 +297,8 @@ export default function Navbar({
                         className={cn(
                           'px-2 py-0.5 rounded-lg font-medium transition text-[11px]',
                           filterType === 'cities'
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+                            ? 'bg-primary text-slate-950 font-bold shadow-sm'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-800/70'
                         )}
                       >
                         Cities ({cityCount})
@@ -312,7 +320,7 @@ export default function Navbar({
                       </button>
                     )}
                   </div>
-                  <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                  <span className="text-[10px] text-slate-400 hidden sm:inline">
                     ↑↓ Navigate
                   </span>
                 </div>
@@ -332,7 +340,7 @@ export default function Navbar({
               )}
 
               {/* Scrollable Content Container */}
-              <div className="max-h-80 overflow-y-auto divide-y divide-border/30">
+              <div className="max-h-80 overflow-y-auto divide-y divide-slate-800">
                 {displayedResults.length > 0 ? (
                   <div>
                     {displayedResults.map((item, idx) => {
@@ -345,8 +353,8 @@ export default function Navbar({
                           className={cn(
                             'w-full text-left px-3.5 py-2.5 text-sm transition flex items-center justify-between group',
                             isSelected
-                              ? 'bg-primary/20 text-white'
-                              : 'text-foreground hover:bg-secondary/60'
+                              ? 'bg-primary/20 text-white border-l-2 border-primary'
+                              : 'text-slate-200 hover:bg-slate-800/80'
                           )}
                         >
                           <div className="flex items-center gap-2.5 min-w-0 pr-2">
@@ -355,7 +363,7 @@ export default function Navbar({
                                 'p-1.5 rounded-xl transition shrink-0',
                                 item.isPincode
                                   ? 'bg-amber-500/20 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950'
-                                  : 'bg-secondary text-primary group-hover:bg-primary group-hover:text-primary-foreground'
+                                  : 'bg-slate-800 text-sky-400 group-hover:bg-primary group-hover:text-slate-950'
                               )}
                             >
                               {item.isPincode ? (
@@ -373,14 +381,14 @@ export default function Navbar({
                                   </span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+                              <div className="flex items-center gap-2 text-xs text-slate-400 truncate">
                                 {item.state && (
                                   <span>
                                     {item.district && item.district !== item.name ? `${item.district}, ` : ''}{item.state}
                                   </span>
                                 )}
                                 {item.lat && item.lon && (
-                                  <span className="text-[10px] text-muted-foreground/60 font-mono hidden sm:inline">
+                                  <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">
                                     ({Number(item.lat).toFixed(2)}°N, {Number(item.lon).toFixed(2)}°E)
                                   </span>
                                 )}
@@ -390,7 +398,7 @@ export default function Navbar({
 
                           <div className="shrink-0 flex items-center gap-2">
                             {isSelected ? (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-lg bg-primary text-primary-foreground shadow-sm">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-lg bg-primary text-slate-950 font-bold shadow-sm">
                                 Select <CornerDownLeft className="w-2.5 h-2.5" />
                               </span>
                             ) : item.tag ? (
@@ -400,7 +408,7 @@ export default function Navbar({
                                   'text-[10px] hidden sm:inline-flex',
                                   item.isPincode
                                     ? 'bg-amber-500/10 text-amber-300 border-amber-500/40 font-mono font-bold'
-                                    : 'bg-secondary/60'
+                                    : 'bg-slate-800 text-slate-300 border-slate-700'
                                 )}
                               >
                                 {item.tag}
@@ -413,27 +421,27 @@ export default function Navbar({
                   </div>
                 ) : query.trim() ? (
                   <div className="px-4 py-8 text-center">
-                    <div className="w-9 h-9 mx-auto mb-2 rounded-full bg-secondary/80 flex items-center justify-center text-muted-foreground">
+                    <div className="w-9 h-9 mx-auto mb-2 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
                       <Search className="w-4 h-4" />
                     </div>
-                    <div className="text-xs font-semibold text-foreground">No matches found for "{query}"</div>
-                    <p className="text-[11px] text-muted-foreground mt-1 max-w-xs mx-auto">
+                    <div className="text-xs font-semibold text-slate-200">No matches found for "{query}"</div>
+                    <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">
                       Try typing a district name, regional hub, or a valid 6-digit Indian PIN code (e.g. 110001, 560001).
                     </p>
                   </div>
                 ) : (
                   /* Empty state: Recent searches, top metros & PIN code guide */
-                  <div className="p-3 space-y-3.5">
+                  <div className="p-3.5 space-y-3.5">
                     {/* Recent Searches */}
                     {recentSearches.length > 0 && (
                       <div className="space-y-1.5">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-1">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
                           <span className="flex items-center gap-1.5">
                             <History className="w-3.5 h-3.5 text-primary" /> Recent Searches
                           </span>
                           <button
                             onClick={clearRecentSearches}
-                            className="text-[10px] font-medium text-muted-foreground hover:text-rose-400 transition"
+                            className="text-[10px] font-medium text-slate-400 hover:text-rose-400 transition"
                           >
                             Clear All
                           </button>
@@ -443,7 +451,7 @@ export default function Navbar({
                             <div
                               key={i}
                               onClick={() => selectCityAndClose(city)}
-                              className="group px-2.5 py-1 rounded-xl bg-secondary/70 hover:bg-secondary text-xs text-foreground border border-border/60 hover:border-primary/40 transition flex items-center gap-1.5 cursor-pointer"
+                              className="group px-2.5 py-1 rounded-xl bg-[#131e3d] hover:bg-slate-800 text-xs text-slate-200 border border-slate-700/80 hover:border-primary/50 transition flex items-center gap-1.5 cursor-pointer"
                             >
                               <MapPin className="w-3 h-3 text-primary shrink-0" />
                               <span className="font-medium">{city.name}</span>
@@ -462,28 +470,28 @@ export default function Navbar({
 
                     {/* Popular Indian Metros (8 major regional hubs) */}
                     <div className="space-y-1.5">
-                      <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-1 flex items-center justify-between">
+                      <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1 flex items-center justify-between">
                         <span className="flex items-center gap-1.5">
                           <TrendingUp className="w-3.5 h-3.5 text-amber-400" /> Key Indian Metros
                         </span>
-                        <span className="text-[10px] text-muted-foreground font-normal">8 Major Hubs</span>
+                        <span className="text-[10px] text-slate-400 font-normal">8 Major Hubs</span>
                       </div>
                       <div className="grid grid-cols-2 gap-1.5 pt-0.5">
                         {POPULAR_METROS.map((metro) => (
                           <button
                             key={metro.name}
                             onClick={() => selectCityAndClose(metro)}
-                            className="px-3 py-2 rounded-xl bg-secondary/40 hover:bg-primary/15 text-left text-xs text-foreground border border-border/50 hover:border-primary/40 transition flex items-center justify-between group"
+                            className="px-3 py-2 rounded-xl bg-[#121c38] hover:bg-primary/15 text-left text-xs text-slate-200 border border-slate-700/70 hover:border-primary/50 transition flex items-center justify-between group"
                           >
                             <div>
                               <span className="font-semibold group-hover:text-primary transition block">
                                 {metro.name}
                               </span>
-                              <span className="text-[10px] text-muted-foreground">
+                              <span className="text-[10px] text-slate-400">
                                 {metro.state}
                               </span>
                             </div>
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-secondary/80 text-muted-foreground border border-border/60 uppercase font-mono">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-800/90 text-slate-300 border border-slate-700 font-mono uppercase">
                               {metro.region}
                             </span>
                           </button>
@@ -492,9 +500,9 @@ export default function Navbar({
                     </div>
 
                     {/* Quick PIN Code Tip */}
-                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs flex items-start gap-2">
+                    <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-xs flex items-start gap-2">
                       <Hash className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                      <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                      <p className="text-[11px] text-amber-200 leading-relaxed">
                         <strong className="text-amber-300">Indian Postal Code Search:</strong> Enter any 6-digit PIN (e.g.{' '}
                         <span
                           onClick={() => {
@@ -533,19 +541,19 @@ export default function Navbar({
               </div>
 
               {/* Dropdown Footer Toolbar */}
-              <div className="px-3.5 py-2 border-t border-border/50 bg-secondary/20 flex items-center justify-between text-[11px] text-muted-foreground">
+              <div className="px-3.5 py-2 border-t border-slate-800 bg-[#080e1e] flex items-center justify-between text-[11px] text-slate-400">
                 <div className="flex items-center gap-3">
                   <span className="flex items-center gap-1">
-                    <kbd className="px-1 py-0.2 rounded bg-secondary border border-border/60 font-mono text-[9px]">↑↓</kbd> Navigate
+                    <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[9px] text-slate-300">↑↓</kbd> Navigate
                   </span>
                   <span className="flex items-center gap-1">
-                    <kbd className="px-1 py-0.2 rounded bg-secondary border border-border/60 font-mono text-[9px]">↵</kbd> Select
+                    <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[9px] text-slate-300">↵</kbd> Select
                   </span>
                   <span className="flex items-center gap-1">
-                    <kbd className="px-1 py-0.2 rounded bg-secondary border border-border/60 font-mono text-[9px]">Esc</kbd> Close
+                    <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[9px] text-slate-300">Esc</kbd> Close
                   </span>
                 </div>
-                <span className="text-[10px] text-muted-foreground/80 hidden sm:inline">
+                <span className="text-[10px] text-slate-400 hidden sm:inline">
                   4,242+ Indian Cities & PIN Codes
                 </span>
               </div>
