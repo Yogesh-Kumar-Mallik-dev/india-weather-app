@@ -30,7 +30,7 @@ import {
   Star
 } from 'lucide-react';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 const STORAGE_KEYS = {
   ACTIVE_CITY: 'mausam_active_city',

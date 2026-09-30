@@ -1,0 +1,3 @@
+# Robots.txt for Mausam Bharat Weather Portal
+User-agent: *
+Allow: /

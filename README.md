@@ -107,6 +107,27 @@ npm run dev
 ```
 Open `http://localhost:3000` in your web browser.
 
+## 🐳 Production VPS Deployment (Isolated & Subdomain-Ready)
+
+This project is built for seamless deployment on a VPS alongside your other existing apps with **zero port conflicts, no process interference, and a single assigned subdomain**:
+
+```bash
+# 1. Clone repository
+git clone git@github.com:Yogesh-Kumar-Mallik-dev/india-weather-app.git
+cd india-weather-app
+
+# 2. Configure environment (optional, defaults to port 3000)
+cp .env.example .env
+
+# 3. Deploy with 1-click script
+./deploy/deploy.sh
+```
+
+- **Complete Process Isolation**: Runs in multi-stage Docker containers with non-root users on an internal bridge network.
+- **Port Safety**: Frontend binds strictly to `127.0.0.1:${APP_PORT:-3000}` (never public). Backend port 5000 is internal-only.
+- **Single Subdomain**: Next.js automatically rewrites `/api/*` internally to the backend container.
+- **Nginx / Caddy / Cloudflare Ready**: Ready-to-copy reverse proxy configs available in [`deploy/VPS_DEPLOYMENT_GUIDE.md`](deploy/VPS_DEPLOYMENT_GUIDE.md).
+
 ---
 
 ## 📡 REST API Documentation

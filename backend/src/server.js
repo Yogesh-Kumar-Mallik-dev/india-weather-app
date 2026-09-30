@@ -1,7 +1,15 @@
+import dns from 'node:dns';
+import http from 'node:http';
+import https from 'node:https';
 import express from 'express';
 import cors from 'cors';
 import { PORT } from './config.js';
 import weatherRoutes from './routes/weatherRoutes.js';
+
+// Prioritize IPv4 DNS resolution & sockets to avoid IPv6 route timeouts on Docker/VPS
+dns.setDefaultResultOrder('ipv4first');
+if (http.globalAgent?.options) http.globalAgent.options.family = 4;
+if (https.globalAgent?.options) https.globalAgent.options.family = 4;
 
 const app = express();
 

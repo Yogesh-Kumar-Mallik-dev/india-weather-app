@@ -1,0 +1,44 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: india-weather-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+    networks:
+      - weather-internal-net
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:5000/api/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    # Backend port is internal only - completely isolated from host and other apps
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: india-weather-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - INTERNAL_BACKEND_URL=http://backend:5000
+      - NEXT_TELEMETRY_DISABLED=1
+    ports:
+      # Bound strictly to 127.0.0.1 to avoid public exposure; proxy through your VPS reverse proxy (Nginx/Caddy/Cloudflare)
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - weather-internal-net
+
+networks:
+  weather-internal-net:
+    name: india_weather_internal_network
+    driver: bridge

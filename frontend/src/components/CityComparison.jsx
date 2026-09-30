@@ -8,7 +8,7 @@ import { Badge } from './ui/badge';
 import { formatTemp } from '../utils/formatters';
 import { ArrowLeftRight, Search, RefreshCw, Sparkles } from 'lucide-react';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 export default function CityComparison({ currentCity, unit }) {
   const [targetCityName, setTargetCityName] = useState('Mumbai');

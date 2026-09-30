@@ -17,7 +17,7 @@ import {
   Star
 } from 'lucide-react';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 const POPULAR_METROS = [
   { name: 'New Delhi', state: 'Delhi', lat: 28.6139, lon: 77.2090 },

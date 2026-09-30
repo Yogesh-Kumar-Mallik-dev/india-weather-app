@@ -1,0 +1,18 @@
+# ============================================================
+# Caddy Reverse Proxy Configuration for Mausam Bharat Subdomain
+# Caddy automatically provisions and renews Let's Encrypt SSL!
+# Append to your /etc/caddy/Caddyfile and run: systemctl reload caddy
+# ============================================================
+
+weather.yourdomain.com {
+    # Match APP_PORT configured in your .env (default 3000)
+    reverse_proxy 127.0.0.1:3000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Compression
+    encode gzip zstd
+}
