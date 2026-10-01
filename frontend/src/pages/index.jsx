@@ -300,10 +300,10 @@ export default function WeatherDashboard() {
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-5">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 lg:px-8 py-3.5 sm:py-6 space-y-4 sm:space-y-5">
         {/* Pinned Favorites Quick-Bar */}
         {favorites.length > 0 && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs w-full">
             <span className="text-muted-foreground flex items-center gap-1 font-semibold shrink-0">
               <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> Pinned Stations:
             </span>
@@ -325,32 +325,37 @@ export default function WeatherDashboard() {
           </div>
         )}
 
-        {/* Navigation Tabs using shadcn Tabs */}
+        {/* Navigation Tabs using shadcn Tabs with mobile horizontal scroll */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="bg-secondary/70 border border-border/70 p-1 rounded-2xl flex flex-wrap gap-1 h-auto">
-            <TabsTrigger value="overview" className="gap-1.5 rounded-xl text-xs py-2 px-3.5">
+          <TabsList className="bg-secondary/70 border border-border/70 p-1 rounded-2xl flex items-center overflow-x-auto no-scrollbar gap-1 w-full sm:flex-wrap h-auto">
+            <TabsTrigger value="overview" className="gap-1.5 rounded-xl text-xs py-2 px-3 sm:px-3.5 shrink-0">
               <LayoutDashboard className="w-3.5 h-3.5" />
-              <span>National Dashboard</span>
+              <span className="hidden sm:inline">National Dashboard</span>
+              <span className="sm:hidden">Dashboard</span>
             </TabsTrigger>
 
-            <TabsTrigger value="hourly" className="gap-1.5 rounded-xl text-xs py-2 px-3.5">
+            <TabsTrigger value="hourly" className="gap-1.5 rounded-xl text-xs py-2 px-3 sm:px-3.5 shrink-0">
               <Clock className="w-3.5 h-3.5" />
-              <span>48h Hourly</span>
+              <span className="hidden sm:inline">48h Hourly</span>
+              <span className="sm:hidden">Hourly</span>
             </TabsTrigger>
 
-            <TabsTrigger value="daily" className="gap-1.5 rounded-xl text-xs py-2 px-3.5">
+            <TabsTrigger value="daily" className="gap-1.5 rounded-xl text-xs py-2 px-3 sm:px-3.5 shrink-0">
               <Calendar className="w-3.5 h-3.5" />
-              <span>14-Day Outlook</span>
+              <span className="hidden sm:inline">14-Day Outlook</span>
+              <span className="sm:hidden">14-Day</span>
             </TabsTrigger>
 
-            <TabsTrigger value="radar" className="gap-1.5 rounded-xl text-xs py-2 px-3.5">
+            <TabsTrigger value="radar" className="gap-1.5 rounded-xl text-xs py-2 px-3 sm:px-3.5 shrink-0">
               <Layers className="w-3.5 h-3.5" />
-              <span>Live Rain Radar</span>
+              <span className="hidden sm:inline">Live Rain Radar</span>
+              <span className="sm:hidden">Radar</span>
             </TabsTrigger>
 
-            <TabsTrigger value="compare" className="gap-1.5 rounded-xl text-xs py-2 px-3.5">
+            <TabsTrigger value="compare" className="gap-1.5 rounded-xl text-xs py-2 px-3 sm:px-3.5 shrink-0">
               <ArrowLeftRight className="w-3.5 h-3.5" />
-              <span>Metro Comparison</span>
+              <span className="hidden sm:inline">Metro Comparison</span>
+              <span className="sm:hidden">Compare</span>
             </TabsTrigger>
           </TabsList>
 

@@ -45,32 +45,34 @@ export default function HourlyForecast({ hourly = [], unit }) {
         </div>
 
         {/* View Mode Switcher with shadcn Buttons */}
-        <div className="flex items-center bg-secondary/80 p-0.5 rounded-xl border border-border/80">
+        <div className="flex items-center bg-secondary/80 p-0.5 rounded-xl border border-border/80 overflow-x-auto no-scrollbar max-w-full">
           <Button
             variant={viewMode === 'temp' ? 'saffron' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('temp')}
-            className="h-7 px-3 text-xs gap-1.5"
+            className="h-7 px-2.5 sm:px-3 text-xs gap-1 sm:gap-1.5 shrink-0"
           >
             <Thermometer className="w-3.5 h-3.5" />
-            <span>Temperature</span>
+            <span className="hidden sm:inline">Temperature</span>
+            <span className="sm:hidden">Temp</span>
           </Button>
 
           <Button
             variant={viewMode === 'rain' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('rain')}
-            className={`h-7 px-3 text-xs gap-1.5 ${viewMode === 'rain' ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''}`}
+            className={`h-7 px-2.5 sm:px-3 text-xs gap-1 sm:gap-1.5 shrink-0 ${viewMode === 'rain' ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''}`}
           >
             <CloudRain className="w-3.5 h-3.5" />
-            <span>Rain Probability</span>
+            <span className="hidden sm:inline">Rain Probability</span>
+            <span className="sm:hidden">Rain</span>
           </Button>
 
           <Button
             variant={viewMode === 'wind' ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setViewMode('wind')}
-            className={`h-7 px-3 text-xs gap-1.5 ${viewMode === 'wind' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+            className={`h-7 px-2.5 sm:px-3 text-xs gap-1 sm:gap-1.5 shrink-0 ${viewMode === 'wind' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
           >
             <Wind className="w-3.5 h-3.5" />
             <span>Wind</span>
@@ -78,9 +80,9 @@ export default function HourlyForecast({ hourly = [], unit }) {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-5 pt-3">
+      <CardContent className="space-y-4 sm:space-y-5 pt-2 sm:pt-3">
         {/* Interactive Chart for Next 24 Hours */}
-        <div className="h-60 w-full pt-2">
+        <div className="h-48 sm:h-60 w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
             {viewMode === 'temp' ? (
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>

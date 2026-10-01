@@ -78,20 +78,20 @@ export default function CityComparison({ currentCity, unit }) {
         </div>
 
         {/* Input & Compare Button */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <Input
             type="text"
             value={targetCityName}
             onChange={(e) => setTargetCityName(e.target.value)}
             placeholder="e.g. Mumbai, Bengaluru..."
-            className="w-48 h-9 rounded-xl bg-secondary/70 border-border/80 text-xs focus-visible:ring-purple-400"
+            className="flex-1 sm:w-48 h-9 rounded-xl bg-secondary/70 border-border/80 text-xs focus-visible:ring-purple-400"
           />
           <Button
             variant="saffron"
             size="sm"
             onClick={() => handleCompare(targetCityName)}
             disabled={loading}
-            className="h-9 px-4 gap-1.5 rounded-xl"
+            className="h-9 px-3.5 sm:px-4 gap-1.5 rounded-xl shrink-0"
           >
             {loading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
             <span>Compare</span>

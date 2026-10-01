@@ -219,7 +219,7 @@ export default function Navbar({
   const cityCount = searchResults.filter((r) => !r.isPincode).length;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/80 bg-background/90 backdrop-blur-2xl px-4 lg:px-8 py-3 transition-all shadow-md">
+    <header className="sticky top-0 z-50 border-b border-border/80 bg-background/90 backdrop-blur-2xl px-3 sm:px-4 lg:px-8 py-2.5 sm:py-3 transition-all shadow-md">
       {/* Backdrop overlay to clearly separate search from the main application */}
       {isOpen && (
         <div
@@ -228,12 +228,59 @@ export default function Navbar({
         />
       )}
 
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Brand with Logo */}
-        <Logo size="md" showText={true} showBadge={true} />
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3 md:gap-4">
+        {/* Top row on mobile: Logo on left, compact action icons on right */}
+        <div className="flex items-center justify-between w-full md:w-auto shrink-0">
+          <Logo size="md" showText={true} showBadge={true} />
+
+          {/* Mobile-only action controls */}
+          <div className="flex items-center gap-1.5 md:hidden">
+            <Button
+              variant="glass"
+              size="icon"
+              onClick={onOpenLocationDialog || handleDetectLocation}
+              title="Set Live Telemetry / GPS Location"
+              className="h-8 w-8 rounded-xl border-border/70"
+            >
+              <Compass className="w-4 h-4 text-emerald-400" />
+            </Button>
+
+            {/* Mobile Unit Toggle */}
+            <div className="flex rounded-xl bg-secondary/80 border border-border/70 p-0.5 shadow-inner">
+              <Button
+                variant={unit === 'C' ? 'saffron' : 'ghost'}
+                size="sm"
+                onClick={() => onToggleUnit('C')}
+                className="h-7 px-2 rounded-lg text-xs"
+              >
+                °C
+              </Button>
+              <Button
+                variant={unit === 'F' ? 'saffron' : 'ghost'}
+                size="sm"
+                onClick={() => onToggleUnit('F')}
+                className="h-7 px-2 rounded-lg text-xs"
+              >
+                °F
+              </Button>
+            </div>
+
+            {/* Mobile Refresh Button */}
+            <Button
+              variant="glass"
+              size="icon"
+              onClick={onRefresh}
+              disabled={loading}
+              title="Refresh Live Data"
+              className="h-8 w-8 rounded-xl border-border/70"
+            >
+              <RefreshCw className={cn('w-3.5 h-3.5 text-slate-300', loading && 'animate-spin text-primary')} />
+            </Button>
+          </div>
+        </div>
 
         {/* Enhanced City Search Bar with Distinct Background */}
-        <div className={cn("relative w-full md:w-[460px] lg:w-[540px]", isOpen ? "z-50" : "z-30")} ref={dropdownRef}>
+        <div className={cn("relative w-full md:w-[440px] lg:w-[520px]", isOpen ? "z-50" : "z-30")} ref={dropdownRef}>
           <div className="relative flex items-center group">
             <Search className="absolute left-3.5 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none" />
             <Input
@@ -243,8 +290,8 @@ export default function Navbar({
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setIsOpen(true)}
               onKeyDown={handleKeyDown}
-              placeholder="Search 4,242+ Indian cities, districts or 6-digit PIN..."
-              className="pl-10 pr-20 h-10 rounded-2xl bg-[#0c1427] hover:bg-[#0f1932] group-focus-within:bg-[#101b37] border-slate-700/80 group-focus-within:border-primary/80 group-focus-within:ring-4 group-focus-within:ring-primary/20 shadow-lg text-slate-100 placeholder:text-slate-400 text-sm transition-all"
+              placeholder="Search 4,242+ Indian cities or PIN..."
+              className="pl-10 pr-20 h-10 rounded-2xl bg-[#0c1427] hover:bg-[#0f1932] group-focus-within:bg-[#101b37] border-slate-700/80 group-focus-within:border-primary/80 group-focus-within:ring-4 group-focus-within:ring-primary/20 shadow-lg text-slate-100 placeholder:text-slate-400 text-sm sm:text-sm transition-all"
             />
             
             {/* Quick action badges & spinner inside input */}
@@ -561,8 +608,8 @@ export default function Navbar({
           )}
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2.5">
+        {/* Desktop Action Controls */}
+        <div className="hidden md:flex items-center gap-2.5">
           <Button
             variant="glass"
             size="sm"

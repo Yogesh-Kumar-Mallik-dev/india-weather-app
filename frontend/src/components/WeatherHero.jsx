@@ -117,24 +117,24 @@ export default function WeatherHero({ weather, unit, onFavoritesChange }) {
       <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none animate-pulseGlow" />
       <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <CardContent className="relative z-10 p-6 md:p-8">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+      <CardContent className="relative z-10 p-4 sm:p-6 md:p-8">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 lg:gap-8">
           {/* Left Column: Location & Primary Temperature */}
-          <div className="space-y-4 max-w-xl">
+          <div className="space-y-4 max-w-xl w-full">
             {/* Location & Tags */}
             <div className="space-y-1.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="saffron" className="flex items-center gap-1.5 px-3 py-1 font-bold">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <Badge variant="saffron" className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 font-bold text-xs">
                   <MapPin className="w-3.5 h-3.5" />
                   <span>{location.state ? `${location.state}, India` : 'India'}</span>
                 </Badge>
 
-                <Badge variant="outline" className="text-[11px] font-mono bg-secondary/40">
+                <Badge variant="outline" className="text-[10px] sm:text-[11px] font-mono bg-secondary/40">
                   {location.lat.toFixed(2)}°N, {location.lon.toFixed(2)}°E
                 </Badge>
 
                 {location.pincode && (
-                  <Badge variant="outline" className="text-[11px] font-mono font-bold bg-amber-500/10 text-amber-300 border-amber-500/30 flex items-center gap-1">
+                  <Badge variant="outline" className="text-[10px] sm:text-[11px] font-mono font-bold bg-amber-500/10 text-amber-300 border-amber-500/30 flex items-center gap-1">
                     <Hash className="w-3 h-3" /> PIN {location.pincode}
                   </Badge>
                 )}
@@ -142,7 +142,7 @@ export default function WeatherHero({ weather, unit, onFavoritesChange }) {
                 {indianAqi?.aqi != null && (
                   <Badge
                     variant="outline"
-                    className="font-bold text-[11px]"
+                    className="font-bold text-[10px] sm:text-[11px]"
                     style={{ borderColor: `${indianAqi.color}50`, color: indianAqi.color }}
                   >
                     CPCB AQI {indianAqi.aqi} • {indianAqi.category}
@@ -174,14 +174,14 @@ export default function WeatherHero({ weather, unit, onFavoritesChange }) {
                 </div>
               </div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight drop-shadow-sm">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight drop-shadow-sm break-words">
                 {location.name}
               </h1>
 
-              <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium pt-0.5 flex-wrap">
+              <div className="flex items-center gap-2 sm:gap-3 text-[11px] sm:text-xs text-muted-foreground font-medium pt-0.5 flex-wrap">
                 <span className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-primary" />
-                  Observation Time: {formatTime(current.time, true)} IST
+                  {formatTime(current.time, true)} IST
                 </span>
                 <span>•</span>
                 <span>Elevation: {location.elevation ?? '--'} m MSL</span>
@@ -193,25 +193,25 @@ export default function WeatherHero({ weather, unit, onFavoritesChange }) {
             </div>
 
             {/* Main Temperature & High/Low Pills */}
-            <div className="flex items-baseline gap-5 pt-1">
-              <div className="text-6xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter drop-shadow-lg">
+            <div className="flex flex-col sm:flex-row sm:items-baseline gap-3 sm:gap-5 pt-1">
+              <div className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter drop-shadow-lg">
                 {formatTemp(current.temp, unit)}
               </div>
 
               <div className="space-y-2">
-                <div className="text-slate-300 font-medium text-sm flex items-center gap-1.5">
+                <div className="text-slate-300 font-medium text-xs sm:text-sm flex items-center gap-1.5">
                   Heat Index (Feels like){' '}
-                  <span className="font-extrabold text-primary text-base">
+                  <span className="font-extrabold text-primary text-sm sm:text-base">
                     {formatTemp(current.apparentTemp, unit)}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 text-xs font-semibold">
-                  <Badge variant="outline" className="border-rose-500/30 bg-rose-500/10 text-rose-300 px-2.5 py-1">
+                  <Badge variant="outline" className="border-rose-500/30 bg-rose-500/10 text-rose-300 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px]">
                     <ArrowUp className="w-3 h-3 mr-1 text-rose-400" />
                     High {formatTemp(todayDaily.tempMax, unit)}
                   </Badge>
-                  <Badge variant="outline" className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 px-2.5 py-1">
+                  <Badge variant="outline" className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[11px]">
                     <ArrowDown className="w-3 h-3 mr-1 text-cyan-400" />
                     Low {formatTemp(todayDaily.tempMin, unit)}
                   </Badge>
@@ -220,8 +220,8 @@ export default function WeatherHero({ weather, unit, onFavoritesChange }) {
             </div>
 
             {/* Weather Condition Banner */}
-            <div className="inline-flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-secondary/70 border border-border/80 shadow-md backdrop-blur-md">
-              <WeatherIcon code={current.weatherCode} isDay={current.isDay} className="w-8 h-8" />
+            <div className="inline-flex items-center gap-3 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-secondary/70 border border-border/80 shadow-md backdrop-blur-md">
+              <WeatherIcon code={current.weatherCode} isDay={current.isDay} className="w-7 h-7 sm:w-8 sm:h-8" />
               <div>
                 <div className="text-sm font-bold text-white leading-tight">
                   {current.weatherMeta?.label}
@@ -235,7 +235,7 @@ export default function WeatherHero({ weather, unit, onFavoritesChange }) {
 
           {/* Right Column: Telemetry Cards Grid */}
           <div className="w-full lg:w-auto flex-1 max-w-xl">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
               {/* Rain Probability */}
               <div className="p-4 rounded-2xl bg-secondary/50 border border-border/70 backdrop-blur-md hover:bg-secondary/70 transition flex flex-col justify-between">
                 <div className="flex items-center justify-between text-muted-foreground text-xs font-semibold">

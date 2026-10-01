@@ -38,68 +38,78 @@ export default function DailyForecast({ daily = [], unit }) {
           return (
             <div
               key={idx}
-              className="py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-sm hover:bg-secondary/40 px-3 rounded-2xl transition duration-150"
+              className="py-3 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3 text-sm hover:bg-secondary/40 px-2 sm:px-3 rounded-2xl transition duration-150"
             >
-              {/* Day & Date */}
-              <div className="w-36 shrink-0 flex items-center gap-2">
-                <span className="font-bold text-foreground">
-                  {idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : formatDay(day.date)}
-                </span>
-                {idx === 0 && (
-                  <Badge variant="saffron" className="text-[10px] px-2 py-0">
-                    Live
-                  </Badge>
-                )}
-              </div>
-
-              {/* Condition & Rain Chance */}
-              <div className="flex items-center gap-3 w-52 shrink-0">
-                <WeatherIcon code={day.weatherCode} className="w-6 h-6 shrink-0" />
-                <div>
-                  <div className="text-xs font-semibold text-foreground">
-                    {day.weatherMeta?.label}
-                  </div>
-                  {day.precipProbMax > 0 && (
-                    <div className="text-[11px] text-sky-400 font-medium flex items-center gap-1">
-                      <CloudRain className="w-3 h-3" />
-                      <span>{day.precipProbMax}% ({day.precipSum} mm)</span>
-                    </div>
+              {/* Left Section: Day Name + Weather Condition */}
+              <div className="flex items-center justify-between md:justify-start gap-3 w-full md:w-auto">
+                <div className="w-28 sm:w-36 shrink-0 flex items-center gap-1.5 sm:gap-2">
+                  <span className="font-bold text-foreground text-xs sm:text-sm">
+                    {idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : formatDay(day.date)}
+                  </span>
+                  {idx === 0 && (
+                    <Badge variant="saffron" className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0">
+                      Live
+                    </Badge>
                   )}
                 </div>
-              </div>
 
-              {/* Proportional Temperature Range Bar */}
-              <div className="flex-1 flex items-center gap-3 max-w-sm">
-                <span className="text-xs font-semibold text-cyan-400 w-12 text-right">
-                  {formatTemp(day.tempMin, unit)}
-                </span>
-                <div className="flex-1 h-2 bg-slate-900 rounded-full relative overflow-hidden shadow-inner border border-slate-800">
-                  <div
-                    className="absolute top-0 bottom-0 bg-gradient-to-r from-cyan-400 via-amber-400 to-rose-400 rounded-full"
-                    style={{
-                      left: `${leftPercent}%`,
-                      width: `${barWidth}%`
-                    }}
-                  />
+                {/* Condition & Rain Chance */}
+                <div className="flex items-center gap-2 sm:gap-3 w-auto md:w-52 shrink-0">
+                  <WeatherIcon code={day.weatherCode} className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
+                  <div>
+                    <div className="text-xs font-semibold text-foreground truncate max-w-[120px] sm:max-w-none">
+                      {day.weatherMeta?.label}
+                    </div>
+                    {day.precipProbMax > 0 && (
+                      <div className="text-[10px] sm:text-[11px] text-sky-400 font-medium flex items-center gap-0.5 sm:gap-1">
+                        <CloudRain className="w-3 h-3" />
+                        <span>{day.precipProbMax}% ({day.precipSum} mm)</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <span className="text-xs font-bold text-rose-400 w-12">
-                  {formatTemp(day.tempMax, unit)}
-                </span>
+
+                {/* UV indicator on mobile inside the top row */}
+                <div className="flex md:hidden items-center gap-1 text-[10px] font-bold shrink-0" style={{ color: uvInfo.color }}>
+                  <Sun className="w-3 h-3 text-amber-400" />
+                  <span>UV {day.uvIndexMax ?? '--'}</span>
+                </div>
               </div>
 
-              {/* UV & Sun Times */}
-              <div className="flex items-center gap-4 text-[11px] text-muted-foreground justify-end">
-                <div className="flex items-center gap-1.5" title="Peak UV Index">
-                  <Sun className="w-3.5 h-3.5 text-amber-400" />
-                  <span style={{ color: uvInfo.color }} className="font-bold">
-                    UV {day.uvIndexMax ?? '--'}
+              {/* Right Section: Proportional Temperature Range Bar & Sun Times */}
+              <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto flex-1 md:max-w-md">
+                <div className="flex-1 flex items-center gap-2 sm:gap-3 max-w-none md:max-w-sm">
+                  <span className="text-xs font-semibold text-cyan-400 w-10 sm:w-12 text-right">
+                    {formatTemp(day.tempMin, unit)}
+                  </span>
+                  <div className="flex-1 h-2 bg-slate-900 rounded-full relative overflow-hidden shadow-inner border border-slate-800 min-w-[60px]">
+                    <div
+                      className="absolute top-0 bottom-0 bg-gradient-to-r from-cyan-400 via-amber-400 to-rose-400 rounded-full"
+                      style={{
+                        left: `${leftPercent}%`,
+                        width: `${barWidth}%`
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs font-bold text-rose-400 w-10 sm:w-12">
+                    {formatTemp(day.tempMax, unit)}
                   </span>
                 </div>
-                <div className="hidden sm:flex items-center gap-1.5" title="Sun times">
-                  <Sunrise className="w-3 h-3 text-amber-300" />
-                  <span>{formatTime(day.sunrise)}</span>
-                  <Sunset className="w-3 h-3 text-orange-300 ml-1.5" />
-                  <span>{formatTime(day.sunset)}</span>
+
+                {/* UV & Sun Times on Desktop */}
+                <div className="hidden md:flex items-center gap-4 text-[11px] text-muted-foreground justify-end shrink-0">
+                  <div className="flex items-center gap-1.5" title="Peak UV Index">
+                    <Sun className="w-3.5 h-3.5 text-amber-400" />
+                    <span style={{ color: uvInfo.color }} className="font-bold">
+                      UV {day.uvIndexMax ?? '--'}
+                    </span>
+                  </div>
+                  <div className="hidden lg:flex items-center gap-1.5" title="Sun times">
+                    <Sunrise className="w-3 h-3 text-amber-300" />
+                    <span>{formatTime(day.sunrise)}</span>
+                    <Sunset className="w-3 h-3 text-orange-300 ml-1.5" />
+                    <span>{formatTime(day.sunset)}</span>
+                  </div>
                 </div>
               </div>
             </div>

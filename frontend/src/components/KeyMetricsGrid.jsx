@@ -13,10 +13,10 @@ export default function KeyMetricsGrid({ current, unit }) {
   const uvPercent = Math.min(100, (uvValue / 12) * 100);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {/* UV Index */}
       <Card className="border-border/70 bg-card/60 backdrop-blur-xl hover:border-primary/40 transition-all duration-300">
-        <CardContent className="p-5 flex flex-col justify-between h-full space-y-3">
+        <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-2.5 sm:space-y-3">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-semibold">UV Radiation</span>
             <Sun className="w-4 h-4 text-amber-400" />
@@ -44,7 +44,7 @@ export default function KeyMetricsGrid({ current, unit }) {
 
       {/* Atmospheric Pressure */}
       <Card className="border-border/70 bg-card/60 backdrop-blur-xl hover:border-primary/40 transition-all duration-300">
-        <CardContent className="p-5 flex flex-col justify-between h-full space-y-3">
+        <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-2.5 sm:space-y-3">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-semibold">Barometric Pressure</span>
             <Gauge className="w-4 h-4 text-cyan-400" />
@@ -68,7 +68,7 @@ export default function KeyMetricsGrid({ current, unit }) {
 
       {/* Cloud Cover */}
       <Card className="border-border/70 bg-card/60 backdrop-blur-xl hover:border-primary/40 transition-all duration-300">
-        <CardContent className="p-5 flex flex-col justify-between h-full space-y-3">
+        <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-2.5 sm:space-y-3">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-semibold">Cloud Cover</span>
             <Cloud className="w-4 h-4 text-slate-300" />
@@ -89,7 +89,7 @@ export default function KeyMetricsGrid({ current, unit }) {
 
       {/* Monsoon Precipitation */}
       <Card className="border-border/70 bg-card/60 backdrop-blur-xl hover:border-primary/40 transition-all duration-300">
-        <CardContent className="p-5 flex flex-col justify-between h-full space-y-3">
+        <CardContent className="p-4 sm:p-5 flex flex-col justify-between h-full space-y-2.5 sm:space-y-3">
           <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-semibold">Precipitation Rate</span>
             <Umbrella className="w-4 h-4 text-blue-400" />
