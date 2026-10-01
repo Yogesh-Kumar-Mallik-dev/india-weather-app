@@ -182,6 +182,7 @@ export default function WeatherDashboard() {
           lon: city.lon,
           city: city.name,
           state: city.state,
+          country: city.country,
           ...(city.pincode ? { pincode: city.pincode } : {})
         }
       });

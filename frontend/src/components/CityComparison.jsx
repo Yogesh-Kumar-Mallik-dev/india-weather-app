@@ -111,7 +111,11 @@ export default function CityComparison({ currentCity, unit }) {
                   Active Location
                 </Badge>
                 <h4 className="text-2xl font-black text-white">{currentCity?.location?.name || '--'}</h4>
-                <p className="text-xs text-muted-foreground">{currentCity?.location?.state}</p>
+                <p className="text-xs text-muted-foreground">
+                  {currentCity?.location?.state && currentCity?.location?.country && currentCity.location.state !== currentCity.location.name
+                    ? `${currentCity.location.state}, ${currentCity.location.country}`
+                    : (currentCity?.location?.country || currentCity?.location?.state || '')}
+                </p>
               </div>
               {c1 && <WeatherIcon code={c1.weatherCode} className="w-12 h-12 drop-shadow" />}
             </div>
@@ -127,7 +131,7 @@ export default function CityComparison({ currentCity, unit }) {
                   <span className="text-2xl font-black text-primary mt-0.5 block">{formatTemp(c1.apparentTemp, unit)}</span>
                 </div>
                 <div className="bg-secondary/60 p-3 rounded-xl border border-border/50">
-                  <span className="text-muted-foreground block text-[11px]">Indian AQI</span>
+                  <span className="text-muted-foreground block text-[11px]">Air Quality (AQI)</span>
                   <span
                     className="text-base font-black block mt-0.5"
                     style={{ color: c1.airQuality?.indian?.color || '#fff' }}
@@ -153,7 +157,11 @@ export default function CityComparison({ currentCity, unit }) {
                       Target Location
                     </Badge>
                     <h4 className="text-2xl font-black text-white">{targetData.location.name}</h4>
-                    <p className="text-xs text-muted-foreground">{targetData.location.state}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {targetData.location.state && targetData.location.country && targetData.location.state !== targetData.location.name
+                        ? `${targetData.location.state}, ${targetData.location.country}`
+                        : (targetData.location.country || targetData.location.state || '')}
+                    </p>
                   </div>
                   {c2 && <WeatherIcon code={c2.weatherCode} className="w-12 h-12 drop-shadow" />}
                 </div>
@@ -169,7 +177,7 @@ export default function CityComparison({ currentCity, unit }) {
                       <span className="text-2xl font-black text-primary mt-0.5 block">{formatTemp(c2.apparentTemp, unit)}</span>
                     </div>
                     <div className="bg-secondary/60 p-3 rounded-xl border border-border/50">
-                      <span className="text-muted-foreground block text-[11px]">Indian AQI</span>
+                      <span className="text-muted-foreground block text-[11px]">Air Quality (AQI)</span>
                       <span
                         className="text-base font-black block mt-0.5"
                         style={{ color: c2.airQuality?.indian?.color || '#fff' }}
@@ -188,7 +196,7 @@ export default function CityComparison({ currentCity, unit }) {
               <div className="h-full min-h-[200px] flex flex-col items-center justify-center py-8 text-center text-muted-foreground space-y-2.5">
                 <ArrowLeftRight className="w-10 h-10 text-muted-foreground/40" />
                 <p className="text-xs max-w-xs">
-                  Enter an Indian city name above (e.g. Mumbai, Bengaluru, Hyderabad) to see real-time side-by-side metrics.
+                  Enter any city name above (e.g. Mumbai, New York, London, Bengaluru) to see real-time side-by-side metrics.
                 </p>
               </div>
             )}

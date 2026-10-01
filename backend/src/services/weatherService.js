@@ -23,9 +23,9 @@ function setCache(key, data) {
   cache.set(key, { timestamp: Date.now(), data });
 }
 
-export async function fetchFullWeather({ lat, lon, cityName, stateName, pincode }) {
+export async function fetchFullWeather({ lat, lon, cityName, stateName, countryName, pincode }) {
   const extractedPin = pincode || (cityName ? String(cityName).match(/\b([1-9][0-9]{5})\b/)?.[1] : undefined);
-  const cacheKey = `weather_${Number(lat).toFixed(3)}_${Number(lon).toFixed(3)}_${extractedPin || ''}`;
+  const cacheKey = `weather_${Number(lat).toFixed(3)}_${Number(lon).toFixed(3)}_${extractedPin || ''}_${countryName || ''}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
@@ -87,7 +87,7 @@ export async function fetchFullWeather({ lat, lon, cityName, stateName, pincode 
       'wind_gusts_10m_max',
       'wind_direction_10m_dominant'
     ].join(','),
-    timezone: 'Asia/Kolkata',
+    timezone: 'auto',
     forecast_days: 14
   };
 
@@ -118,7 +118,7 @@ export async function fetchFullWeather({ lat, lon, cityName, stateName, pincode 
       'uv_index',
       'us_aqi'
     ].join(','),
-    timezone: 'Asia/Kolkata',
+    timezone: 'auto',
     forecast_days: 7
   };
 
@@ -204,11 +204,36 @@ export async function fetchFullWeather({ lat, lon, cityName, stateName, pincode 
     });
   }
 
+  // Resolve country dynamically based on query, coordinates, and timezone
+  let resolvedCountry = countryName;
+  const numLat = Number(lat);
+  const numLon = Number(lon);
+  const isCoordinatesInIndia = numLat >= 6.5 && numLat <= 37.5 && numLon >= 68.0 && numLon <= 97.5;
+
+  if (!resolvedCountry) {
+    if (isCoordinatesInIndia || rawWeather.timezone === 'Asia/Kolkata') {
+      resolvedCountry = 'India';
+    } else if (rawWeather.timezone) {
+      if (rawWeather.timezone.startsWith('America/')) resolvedCountry = 'United States';
+      else if (rawWeather.timezone.startsWith('Europe/London')) resolvedCountry = 'United Kingdom';
+      else if (rawWeather.timezone.startsWith('Europe/Paris')) resolvedCountry = 'France';
+      else if (rawWeather.timezone.startsWith('Asia/Tokyo')) resolvedCountry = 'Japan';
+      else if (rawWeather.timezone.startsWith('Australia/')) resolvedCountry = 'Australia';
+      else if (rawWeather.timezone.startsWith('Asia/Dubai')) resolvedCountry = 'United Arab Emirates';
+      else if (rawWeather.timezone.startsWith('Asia/Singapore')) resolvedCountry = 'Singapore';
+      else {
+        const parts = rawWeather.timezone.split('/');
+        resolvedCountry = parts[0] || '';
+      }
+    }
+  }
+
   const payload = {
     location: {
       name: cityName || 'Custom Coordinates',
       state: stateName || '',
-      country: 'India',
+      country: resolvedCountry || (isCoordinatesInIndia ? 'India' : ''),
+      isIndia: resolvedCountry === 'India' || isCoordinatesInIndia,
       pincode: extractedPin || undefined,
       lat: Number(lat),
       lon: Number(lon),
@@ -440,11 +465,13 @@ export async function searchCities(query) {
     const results = res.data.results || [];
     const formatted = results.map(r => ({
       name: r.name,
-      state: r.admin1 || r.country || '',
+      state: r.admin1 || '',
+      country: r.country || (r.country_code === 'IN' ? 'India' : ''),
+      countryCode: r.country_code || '',
       region: r.country_code === 'IN' ? 'India' : (r.country || ''),
       lat: r.latitude,
       lon: r.longitude,
-      tag: r.country_code === 'IN' ? (r.admin1 || 'India') : r.country,
+      tag: r.country_code === 'IN' ? (r.admin1 || 'India') : (r.admin1 && r.admin1 !== r.name ? `${r.admin1}, ${r.country}` : r.country),
       isIndia: r.country_code === 'IN',
       score: r.country_code === 'IN' ? 0.2 : 0.6
     }));

@@ -81,11 +81,13 @@ export default function WeatherHero({ weather, unit, onFavoritesChange }) {
   };
 
   const handleShare = () => {
-    const text = `🌤️ Weather Report for ${location.name}, ${location.state}:\n` +
+    const countryLabel = location.country ? `, ${location.country}` : (location.isIndia !== false ? ', India' : '');
+    const stateLabel = location.state && location.state.toLowerCase() !== location.name.toLowerCase() ? `, ${location.state}` : '';
+    const text = `🌤️ Weather Report for ${location.name}${stateLabel}${countryLabel}:\n` +
       `Temperature: ${formatTemp(current.temp, unit)} (Feels like ${formatTemp(current.apparentTemp, unit)})\n` +
       `Condition: ${current.weatherMeta?.label}\n` +
       `Rain Chance: ${todayDaily.precipProbMax ?? 0}%\n` +
-      `CPCB AQI: ${current.airQuality?.indian?.aqi ?? 'N/A'} (${current.airQuality?.indian?.category})\n` +
+      `Air Quality: ${current.airQuality?.indian?.aqi ?? 'N/A'} (${current.airQuality?.indian?.category})\n` +
       `Wind: ${formatWind(current.windSpeed)} ${getWindDirection(current.windDirection)}\n` +
       `Tracked via Mausam Bharat`;
 
@@ -124,9 +126,23 @@ export default function WeatherHero({ weather, unit, onFavoritesChange }) {
             {/* Location & Tags */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                {/* Location Badge */}
                 <Badge variant="saffron" className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 font-bold text-xs">
                   <MapPin className="w-3.5 h-3.5" />
-                  <span>{location.state ? `${location.state}, India` : 'India'}</span>
+                  <span>
+                    {(() => {
+                      const parts = [];
+                      if (location.state && location.state.toLowerCase() !== location.name.toLowerCase()) {
+                        parts.push(location.state);
+                      }
+                      if (location.country) {
+                        parts.push(location.country);
+                      } else if (location.isIndia !== false) {
+                        parts.push('India');
+                      }
+                      return parts.length > 0 ? parts.join(', ') : (location.name || 'Global');
+                    })()}
+                  </span>
                 </Badge>
 
                 <Badge variant="outline" className="text-[10px] sm:text-[11px] font-mono bg-secondary/40">
@@ -145,7 +161,7 @@ export default function WeatherHero({ weather, unit, onFavoritesChange }) {
                     className="font-bold text-[10px] sm:text-[11px]"
                     style={{ borderColor: `${indianAqi.color}50`, color: indianAqi.color }}
                   >
-                    CPCB AQI {indianAqi.aqi} • {indianAqi.category}
+                    {location.isIndia !== false ? `CPCB AQI ${indianAqi.aqi} • ${indianAqi.category}` : `Air Quality (AQI ${indianAqi.aqi}) • ${indianAqi.category}`}
                   </Badge>
                 )}
 
@@ -181,7 +197,7 @@ export default function WeatherHero({ weather, unit, onFavoritesChange }) {
               <div className="flex items-center gap-2 sm:gap-3 text-[11px] sm:text-xs text-muted-foreground font-medium pt-0.5 flex-wrap">
                 <span className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-primary" />
-                  {formatTime(current.time, true)} IST
+                  {formatTime(current.time, true)} {location.timezoneAbbr || (location.isIndia !== false ? 'IST' : 'UTC')}
                 </span>
                 <span>•</span>
                 <span>Elevation: {location.elevation ?? '--'} m MSL</span>

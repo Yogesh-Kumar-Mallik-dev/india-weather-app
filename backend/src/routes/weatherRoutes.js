@@ -7,16 +7,17 @@ import { INDIAN_MAJOR_CITIES } from '../data/indianCities.js';
 
 const router = Router();
 
-// Full Weather + AQI + IMD Alerts + Hourly + Daily
+// Full Weather + AQI + Alerts + Hourly + Daily
 router.get('/weather', async (req, res) => {
   try {
     const lat = parseFloat(req.query.lat) || 28.6139; // Default New Delhi
     const lon = parseFloat(req.query.lon) || 77.2090;
     const cityName = req.query.city || 'New Delhi';
     const stateName = req.query.state || 'Delhi';
+    const countryName = req.query.country;
     const pincode = req.query.pincode || req.query.pin;
 
-    const data = await fetchFullWeather({ lat, lon, cityName, stateName, pincode });
+    const data = await fetchFullWeather({ lat, lon, cityName, stateName, countryName, pincode });
     res.json({ success: true, data });
   } catch (err) {
     console.error('Weather route error:', err);
